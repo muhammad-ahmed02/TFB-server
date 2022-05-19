@@ -23,3 +23,6 @@ psycopg2
 
 # Project custom apps
 django-split-settings
+Pillow
+weasyprint==55.0
+django-mathfilters

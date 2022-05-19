@@ -10,7 +10,9 @@ INSTALLED_APPS = (
 
     'django_extensions',
     'clear_cache',
+    'mathfilters',
 
     # your apps goes here
-    # 'project.apps.myapp',
+
+    'project.apps.inventory',
 )

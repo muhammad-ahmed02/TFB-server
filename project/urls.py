@@ -23,3 +23,6 @@ urlpatterns = [
     path('inventory/',include("project.apps.inventory.urls"))
     
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+admin.site.site_header = "Tension Free Bazar Admin"
+admin.site.index_title = "TFB Management Portal"

@@ -1,9 +1,12 @@
 env/
 venv/
 .idea/
+.vscode/
 node_modules
 *.pyc
 npm-debug.log
 tmp/
 .cache
 **/settings_compiled.py
+.env
+.DS_Store

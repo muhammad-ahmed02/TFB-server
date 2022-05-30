@@ -10,13 +10,14 @@ from weasyprint import HTML
 
 @admin.register(products)
 class ProductAdmin(admin.ModelAdmin):
-    list_display=('name','image_tag','purchasing_price','selling_price','available_stock','number_of_items_saled')
-    
-    def image_tag(self, obj):
-        if obj.image:
-            return format_html('<img src="{}" style="width: 50px; height:58px;"" />'.format(obj.image.url))
+    list_display=('name', 'purchasing_price', 'available_stock', 'number_of_items_saled')
+    search_fields = ['name']
 
-    image_tag.short_description = 'Image'
+    # def image_tag(self, obj):
+    #     if obj.image:
+    #         return format_html('<img src="{}" style="width: 50px; height:58px;"" />'.format(obj.image.url))
+
+    # image_tag.short_description = 'Image'
 
 class OrderItemsInline(admin.TabularInline):
     model = OrderItems
@@ -45,4 +46,3 @@ class OrderAdmin(admin.ModelAdmin):
                 return response
 
             return response
-

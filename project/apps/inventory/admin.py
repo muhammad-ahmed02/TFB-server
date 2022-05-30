@@ -27,6 +27,7 @@ class OrderItemsInline(admin.TabularInline):
 class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemsInline]
     list_display=('unique_code','customer_name','total_ammunt')
+    search_fields = ['unique_code']
 
     actions = ["download_invoice"]
 

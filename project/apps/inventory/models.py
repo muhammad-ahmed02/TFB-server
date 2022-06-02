@@ -4,7 +4,6 @@ import uuid
 import shortuuid
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-# Create your models here.
 
 
 class products(models.Model):
@@ -13,12 +12,11 @@ class products(models.Model):
     image = models.ImageField(upload_to='products/')
     imei_or_serial_number = models.CharField(max_length=200,null=True,blank=True)
     available_stock = models.IntegerField(default=0)
-    number_of_items_saled = models.IntegerField(default=0,editable=False)
-
+    number_of_items_saled = models.IntegerField(default=0, editable=False)
+    
     class Meta:
         verbose_name = "Product"
         verbose_name_plural = "Products"
-
 
     def __str__(self):
         return self.name
@@ -31,7 +29,7 @@ class Order(models.Model):
     billing_address = models.CharField(max_length=200,null=True,blank=True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE,null=True,blank=True,editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    total_ammunt = models.DecimalField(decimal_places=2,max_digits=20,null=True,blank=True,editable=False)
+    total_amount = models.DecimalField(decimal_places=2, max_digits=20, null=True, blank=True, editable=False)
     
     class Meta:
         verbose_name = "Order"

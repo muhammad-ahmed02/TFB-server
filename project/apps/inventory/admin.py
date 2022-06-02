@@ -19,7 +19,11 @@ class ProductAdmin(admin.ModelAdmin):
         if obj.image:
             return format_html('<img src="{}" style="width: 50px; height:58px;"" />'.format(obj.image.url))
 
-    image_tag.short_description = 'Image'
+    # def image_tag(self, obj):
+    #     if obj.image:
+    #         return format_html('<img src="{}" style="width: 50px; height:58px;"" />'.format(obj.image.url))
+
+    # image_tag.short_description = 'Image'
 
 class OrderItemsInline(admin.TabularInline):
     model = OrderItems
@@ -30,6 +34,7 @@ class OrderItemsInline(admin.TabularInline):
 class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemsInline]
     list_display=('unique_code','customer_name','total_ammunt')
+    search_fields = ['unique_code']
 
     actions = ["download_invoice"]
 
@@ -47,4 +52,3 @@ class OrderAdmin(admin.ModelAdmin):
                 return response
 
             return response
-

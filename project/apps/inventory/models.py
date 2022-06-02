@@ -26,7 +26,7 @@ class Order(models.Model):
     unique_code = models.CharField(max_length=200,null=True,blank=True,editable=False)
     customer_name = models.CharField(max_length=200,null=True,blank=True)
     customer_phone = models.CharField(max_length=200,null=True,blank=True)
-    billing_address = models.CharField(max_length=200,null=True,blank=True)
+    warranty = models.CharField(max_length=200,null=True,blank=True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE,null=True,blank=True,editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
     total_amount = models.DecimalField(decimal_places=2, max_digits=20, null=True, blank=True, editable=False)

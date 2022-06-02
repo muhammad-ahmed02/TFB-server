@@ -33,7 +33,7 @@ class OrderItemsInline(admin.TabularInline):
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemsInline]
-    list_display=('unique_code','customer_name','total_ammunt')
+    list_display=('unique_code','customer_name','total_amount')
     search_fields = ['unique_code']
 
     actions = ["download_invoice"]

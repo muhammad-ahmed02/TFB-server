@@ -58,7 +58,7 @@ class OrderItems(models.Model):
         for items in order_items:
             ammount += items.selling_price * items.quantity
         order = Order.objects.get(id = self.order.id)
-        order.total_ammunt = ammount
+        order.total_amount = ammount
         order.save()
 
     

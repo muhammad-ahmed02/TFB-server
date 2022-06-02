@@ -28,3 +28,4 @@ weasyprint==55.0
 django-mathfilters
 gunicorn==20.1.0
 whitenoise==6.1.0
+shortuuid==1.0.9

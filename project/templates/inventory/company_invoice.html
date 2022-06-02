@@ -103,9 +103,9 @@
                             <div class="d-none d-sm-block col-1">{{ forloop.counter }}</div>
                             <div class="col-9 col-sm-5">{{obj.product.name}}</div>
                             <div class="d-none d-sm-block col-2">{{obj.quantity}}</div>
-                            <div class="d-none d-sm-block col-2 text-95">{{obj.product.selling_price}}</div>
+                            <div class="d-none d-sm-block col-2 text-95">{{obj.selling_price}}</div>
                             <br>
-                            <div class="col-2 text-secondary-d2">PKR {{obj.quantity|mul:obj.product.selling_price}}</div>
+                            <div class="col-2 text-secondary-d2">PKR {{obj.quantity|mul:obj.selling_price}}</div>
                         </div>
                         
                         {% endfor %}

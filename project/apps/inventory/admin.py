@@ -10,7 +10,10 @@ from weasyprint import HTML
 
 @admin.register(products)
 class ProductAdmin(admin.ModelAdmin):
-    list_display=('name','image_tag','purchasing_price','selling_price','available_stock','number_of_items_saled')
+    
+    list_display=('name','purchasing_price','available_stock','number_of_items_saled')
+    
+    search_fields = ('name', 'purchasing_price','available_stock','number_of_items_saled') 
     
     def image_tag(self, obj):
         if obj.image:

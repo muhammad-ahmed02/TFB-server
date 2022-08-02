@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.core.files.storage import FileSystemStorage
 from django.http import HttpResponse
 from django.template.loader import render_to_string
-from weasyprint import HTML
+# from weasyprint import HTML
 
 
 @admin.register(products)
@@ -36,19 +36,17 @@ class OrderAdmin(admin.ModelAdmin):
     list_display=('unique_code','customer_name','total_amount')
     search_fields = ['unique_code']
 
-    actions = ["download_invoice"]
+    # actions = ["download_invoice"]
 
-    def download_invoice(self, request, queryset):
-        for query in queryset:
-            html_string = render_to_string('inventory/company_invoice.html', {'queryset':query})
-
-            html = HTML(string=html_string)
-            html.write_pdf(target='/tmp/mypdf.pdf')
-
-            fs = FileSystemStorage('/tmp')
-            with fs.open('mypdf.pdf') as pdf:
-                response = HttpResponse(pdf, content_type='application/pdf')
-                response['Content-Disposition'] = 'attachment; filename="mypdf.pdf"'
-                return response
-
-            return response
+    # def download_invoice(self, request, queryset):
+    #     for query in queryset:
+    #         html_string = render_to_string('inventory/company_invoice.html', {'queryset':query})
+    #
+    #         html = HTML(string=html_string)
+    #         html.write_pdf(target='/tmp/mypdf.pdf')
+    #
+    #         fs = FileSystemStorage('/tmp')
+    #         with fs.open('mypdf.pdf') as pdf:
+    #             response = HttpResponse(pdf, content_type='application/pdf')
+    #             response['Content-Disposition'] = 'attachment; filename="mypdf.pdf"'
+    #             return response

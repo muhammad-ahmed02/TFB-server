@@ -7,12 +7,22 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
+    'django.contrib.sites',
 
     'django_extensions',
     'clear_cache',
     'mathfilters',
 
-    # your apps goes here
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+
+    'corsheaders',
+    'rest_framework',
+    'rest_framework.authtoken',
+
+    'rest_auth',
+    "rest_auth.registration",
 
     'project.apps.inventory',
 )

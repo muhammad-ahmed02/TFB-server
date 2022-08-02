@@ -13,16 +13,18 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 
-from django.urls import path,include
+from django.urls import path, include
 from django.contrib import admin
 from django.conf.urls.static import static
 from django.conf import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('inventory/',include("project.apps.inventory.urls"))
-    
-]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    path('api/v1/', include("project.apps.inventory.urls")),
+    path('api/v1/accounts/', include('rest_auth.urls')),
+    path("api/v1/accounts/signup/", include("rest_auth.registration.urls")),
+
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 admin.site.site_header = "Tension Free Bazar Admin"
 admin.site.index_title = "TFB Management Portal"

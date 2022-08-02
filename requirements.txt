@@ -1,9 +1,14 @@
-# Latest django
-django
+# django
+django~=3.2.12
 django_extensions
 
+djangorestframework~=3.13.1
+django-allauth~=0.51.0
+django-cors-headers~=3.13.0
+django-rest-auth~=0.9.5
+
 # deploy toolkit
-Fabric
+Fabric~=2.7.0
 
 # Debug toolbar
 django-debug-toolbar
@@ -24,7 +29,6 @@ psycopg2
 # Project custom apps
 django-split-settings
 Pillow
-weasyprint==55.0
 django-mathfilters
 gunicorn==20.1.0
 whitenoise==6.1.0

@@ -6,6 +6,7 @@ djangorestframework~=3.13.1
 django-allauth~=0.51.0
 django-cors-headers~=3.13.0
 django-rest-auth~=0.9.5
+django-filter~=22.1
 
 # deploy toolkit
 Fabric~=2.7.0

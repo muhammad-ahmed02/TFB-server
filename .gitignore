@@ -10,3 +10,4 @@ tmp/
 **/settings_compiled.py
 .env
 .DS_Store
+mydatabase

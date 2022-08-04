@@ -13,11 +13,14 @@ def generate_join_code(size=6, chars=string.ascii_uppercase + string.digits):
 
 class Products(models.Model):
     name = models.CharField(max_length=200, unique=True)
-    purchasing_price = models.DecimalField(decimal_places=2, max_digits=20)
+    purchasing_price = models.IntegerField()
     image = models.ImageField(upload_to='products/', blank=True, null=True)
     imei_or_serial_number = models.CharField(max_length=200, null=True, blank=True)
     available_stock = models.IntegerField(default=0)
     number_of_items_saled = models.IntegerField(default=0, editable=False)
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
 
     class Meta:
         verbose_name = "Product"
@@ -71,32 +74,47 @@ def update_stock(sender, instance, **kwargs):
 
 
 class SellerProfile(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    profit = models.IntegerField(blank=True, null=True)
+    username = models.CharField(max_length=54)
+    profit = models.IntegerField(default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
 
     def __str__(self):
-        return self.user.username
+        return self.username
 
 
-# class Setting(models.Model):
-#     seller_share = models.PositiveIntegerField()
-#     owner_share = models.PositiveIntegerField()
-#     business_share = models.PositiveIntegerField()
-#     expense_share = models.PositiveIntegerField(default=0)
+class Setting(models.Model):
+    status_choices = (
+        ('UP', 'up'),
+        ('DOWN', 'down'),
+    )
+
+    seller_share = models.PositiveIntegerField()
+    owner_share = models.PositiveIntegerField()
+    business_share = models.PositiveIntegerField()
+    expense_share = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=10, choices=status_choices, default="UP")
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
 
 
-# class CashOrder(models.Model):
-#     unique_id = models.CharField(max_length=10, default=generate_join_code, unique=True)
-#     products = models.ManyToManyField(Products, blank=True)
-#     seller = models.ForeignKey(SellerProfile, on_delete=models.CASCADE)
-#     warranty = models.CharField(max_length=10, blank=True)
-#
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-#
-#     def __str__(self):
-#         return self.unique_id
+class CashOrder(models.Model):
+    unique_id = models.CharField(max_length=10, default=generate_join_code, unique=True)
+    customer_name = models.CharField(max_length=54, null=True, blank=True)
+    product = models.ForeignKey(Products, on_delete=models.CASCADE)
+    sale_by = models.ForeignKey(SellerProfile, on_delete=models.CASCADE)
+    sale_price = models.IntegerField()
+    profit = models.IntegerField(null=True, blank=True)
+    warranty = models.PositiveIntegerField(default=0, help_text="in days")
 
-    '''
-    need to think about the multiple product and price logic
-    '''
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.unique_id
+
+    def save(self, *args, **kwargs):
+        self.profit = self.sale_price - self.product.purchasing_price
+        super(CashOrder, self).save(*args, **kwargs)

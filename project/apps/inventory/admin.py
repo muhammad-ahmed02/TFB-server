@@ -52,9 +52,16 @@ class OrderAdmin(admin.ModelAdmin):
     #             return response
 
 
-# @admin.register(Setting)
-# class SettingAdmin(admin.ModelAdmin):
-#     list_display = ('seller_share', 'owner_share', 'business_share', 'expense_share')
+@admin.register(Setting)
+class SettingAdmin(admin.ModelAdmin):
+    list_display = ('seller_share', 'owner_share', 'business_share', 'expense_share')
 
 
-admin.site.register(SellerProfile)
+@admin.register(CashOrder)
+class CashOrderAdmin(admin.ModelAdmin):
+    list_display = ('unique_id', 'customer_name', 'sale_price', 'profit', 'product')
+
+
+@admin.register(SellerProfile)
+class SettingProfileAdmin(admin.ModelAdmin):
+    list_display = ('username', 'profit')

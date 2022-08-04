@@ -10,6 +10,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
 
     'django_extensions',
+    'django_filters',
     'clear_cache',
     'mathfilters',
 

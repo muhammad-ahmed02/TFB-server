@@ -35,3 +35,9 @@ class CashOrderViewSet(ModelViewSet):
 
     filter_backends = [filters.SearchFilter]
     search_fields = ['unique_id']
+
+
+class ReturnCashOrderViewSet(ModelViewSet):
+    serializer_class = ReturnCashOrderSerializer
+    queryset = ReturnCashOrder.objects.all()
+    permission_classes = [IsAuthenticated]

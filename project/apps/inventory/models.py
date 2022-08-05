@@ -118,3 +118,24 @@ class CashOrder(models.Model):
     def save(self, *args, **kwargs):
         self.profit = self.sale_price - self.product.purchasing_price
         super(CashOrder, self).save(*args, **kwargs)
+
+
+class ReturnCashOrder(models.Model):
+    return_reasons = (
+        ('NOT_INTERESTED', 'Not Interested'),
+        ('ISSUE', 'Issue'),
+    )
+    cash_order = models.ForeignKey(CashOrder, on_delete=models.CASCADE)
+    reason = models.CharField(max_length=20, choices=return_reasons)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.cash_order.unique_id
+
+    def save(self, *args, **kwargs):
+        super(ReturnCashOrder, self).save(*args, **kwargs)
+        '''
+        implement cases for amount returned and profit division
+        '''

@@ -65,3 +65,8 @@ class CashOrderAdmin(admin.ModelAdmin):
 @admin.register(SellerProfile)
 class SettingProfileAdmin(admin.ModelAdmin):
     list_display = ('username', 'profit')
+
+
+@admin.register(ReturnCashOrder)
+class ReturnCashOrderAdmin(admin.ModelAdmin):
+    list_display = ['cash_order', 'reason']

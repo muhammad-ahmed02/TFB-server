@@ -1,6 +1,10 @@
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import filters
+from django.http import FileResponse
+from datetime import datetime
+import io
 
 from .serializers import *
 
@@ -41,3 +45,48 @@ class ReturnCashOrderViewSet(ModelViewSet):
     serializer_class = ReturnCashOrderSerializer
     queryset = ReturnCashOrder.objects.all()
     permission_classes = [IsAuthenticated]
+
+
+class ExportCashOrderViews(ListAPIView):
+    pagination_class = None
+    permission_classes = [IsAuthenticated]
+
+    filter_backends = [filters.SearchFilter]
+    queryset = CashOrder.objects.all()
+    search_fields = ['unique_id']
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        content = io.BytesIO()
+        row = "{unique_id}, {product_name}, {sale_price}, {cost_price}, {sale_by}, {profit}, {warranty}, " \
+              "{date}\n "
+        content.write(
+            row.format(
+                unique_id="Unique ID",
+                product_name="Product Name",
+                sale_price="Sale Price",
+                cost_price="Cost Price",
+                sale_by="Sale By",
+                profit="Profit",
+                warranty="Warranty",
+                date="Date"
+            ).encode("utf-8")
+        )
+        for order in queryset:
+            content.write(
+                row.format(
+                    unique_id=order.unique_id,
+                    product_name=order.product.name,
+                    sale_price=order.sale_price,
+                    cost_price=order.product.purchasing_price,
+                    sale_by=order.sale_by.username,
+                    profit=order.profit,
+                    warranty=f"{order.warranty} Days",
+                    date=order.created_at.strftime("%d-%m-%Y %H:%M:%S")
+                ).encode("utf-8")
+            )
+        content.seek(0)
+        return FileResponse(
+            content, as_attachment=True, filename='CashOrderReport.csv'
+        )

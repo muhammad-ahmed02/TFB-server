@@ -25,16 +25,16 @@ class ProductAdmin(admin.ModelAdmin):
     # image_tag.short_description = 'Image'
 
 
-class OrderItemsInline(admin.TabularInline):
-    model = OrderItems
-    extra = 0
+# class OrderItemsInline(admin.TabularInline):
+#     model = OrderItems
+#     extra = 0
 
 
-@admin.register(Order)
-class OrderAdmin(admin.ModelAdmin):
-    inlines = [OrderItemsInline]
-    list_display = ('unique_code', 'customer_name', 'total_amount')
-    search_fields = ['unique_code']
+# @admin.register(Order)
+# class OrderAdmin(admin.ModelAdmin):
+#     inlines = [OrderItemsInline]
+#     list_display = ('unique_code', 'customer_name', 'total_amount')
+#     search_fields = ['unique_code']
 
     # actions = ["download_invoice"]
 
@@ -59,7 +59,7 @@ class SettingAdmin(admin.ModelAdmin):
 
 @admin.register(CashOrder)
 class CashOrderAdmin(admin.ModelAdmin):
-    list_display = ('unique_id', 'customer_name', 'sale_price', 'profit', 'product')
+    list_display = ('unique_id', 'customer_name', 'sale_price', 'sale_by', 'profit', 'product')
 
 
 @admin.register(SellerProfile)
@@ -69,4 +69,4 @@ class SettingProfileAdmin(admin.ModelAdmin):
 
 @admin.register(ReturnCashOrder)
 class ReturnCashOrderAdmin(admin.ModelAdmin):
-    list_display = ['cash_order', 'reason']
+    list_display = ['cash_order', 'reason', 'return_amount']

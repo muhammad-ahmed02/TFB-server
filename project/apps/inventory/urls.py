@@ -12,4 +12,6 @@ router.register(r"return-cashorder", ReturnCashOrderViewSet, basename="Return Ca
 router.register(r"seller-profile", SellerProfileViewSet, basename="Sellers")
 
 
-urlpatterns = router.urls
+urlpatterns = [
+    path('export-cashorder/', ExportCashOrderViews.as_view()),
+] + router.urls

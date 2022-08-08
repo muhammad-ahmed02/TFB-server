@@ -90,3 +90,47 @@ class ExportCashOrderViews(ListAPIView):
         return FileResponse(
             content, as_attachment=True, filename='CashOrderReport.csv'
         )
+
+
+class ExportReturnCashOrderViews(ListAPIView):
+    pagination_class = None
+    permission_classes = [IsAuthenticated]
+
+    filter_backends = [filters.SearchFilter]
+    queryset = ReturnCashOrder.objects.all()
+    search_fields = ['cash_order__unique_id']
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        content = io.BytesIO()
+        row = "{unique_id}, {product_name}, {sale_price}, {sale_by}, {reason}, {return_amount}, {date} \n"
+
+        content.write(
+            row.format(
+                unique_id="Cash Order Unique ID",
+                product_name="Product Name",
+                sale_price="Sale Price",
+                sale_by="Sale By",
+                reason="Reason",
+                return_amount="Return Amount",
+                date="Date"
+            ).encode("utf-8")
+        )
+        for order in queryset:
+            content.write(
+                row.format(
+                    unique_id=order.cash_order.unique_id,
+                    product_name=order.cash_order.product.name,
+                    sale_price=order.cash_order.sale_price,
+                    sale_by=order.cash_order.sale_by.username,
+                    reason=order.reason,
+                    return_amount=order.return_amount,
+                    date=order.created_at.strftime("%d-%m-%Y %H:%M:%S")
+                ).encode("utf-8")
+            )
+
+        content.seek(0)
+        return FileResponse(
+            content, as_attachment=True, filename='ReturnCashOrderReport.csv'
+        )

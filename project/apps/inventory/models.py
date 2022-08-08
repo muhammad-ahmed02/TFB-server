@@ -98,7 +98,7 @@ class CashOrder(models.Model):
     sale_price = models.IntegerField()
     profit = models.IntegerField(null=True, blank=True)
     warranty = models.PositiveIntegerField(default=0, help_text="in days")
-    quantity = models.IntegerField(default=1, null=True, blank=True)
+    # quantity = models.IntegerField(default=1, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -125,7 +125,8 @@ class CashOrder(models.Model):
 
 @receiver(post_save, sender=CashOrder, dispatch_uid="update_stock_count")
 def update_stock(sender, instance, **kwargs):
-    quantity = instance.quantity
+    # quantity = instance.quantity
+    quantity = 1
     product = Products.objects.get(id=instance.product.id)
     product.available_stock -= quantity
     product.number_of_items_saled += quantity

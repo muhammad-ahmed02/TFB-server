@@ -13,5 +13,6 @@ router.register(r"seller-profile", SellerProfileViewSet, basename="Sellers")
 
 
 urlpatterns = [
-    path('export-cashorder/', ExportCashOrderViews.as_view()),
+    path('export/cashorder/', ExportCashOrderViews.as_view()),
+    path('export/return-cashorder/', ExportReturnCashOrderViews.as_view()),
 ] + router.urls

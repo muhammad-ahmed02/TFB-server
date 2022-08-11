@@ -137,6 +137,7 @@ class ReturnCashOrder(models.Model):
     return_reasons = (
         ('NOT_INTERESTED', 'Not Interested'),
         ('ISSUE', 'Issue'),
+        ('CUSTOM', 'Custom'),
     )
     cash_order = models.ForeignKey(CashOrder, on_delete=models.CASCADE)
     reason = models.CharField(max_length=20, choices=return_reasons)
@@ -152,14 +153,31 @@ class ReturnCashOrder(models.Model):
 
         if self.reason == "NOT_INTERESTED":
             self.return_amount = self.cash_order.product.purchasing_price
-        else:
+        elif self.reason == "ISSUE":
             self.return_amount = self.cash_order.sale_price
 
             seller = SellerProfile.objects.get(id=self.cash_order.sale_by.id)
             seller_share = Setting.objects.all()[0].seller_share
-
+            # seller share calculated from profit
             seller_profit = ((self.cash_order.profit * seller_share) / 100)
             seller.profit -= seller_profit
+            seller.save()
+        else:
+            # calculate profit
+            sale_price = self.cash_order.sale_price
+            profit = sale_price - self.return_amount
+
+            seller = SellerProfile.objects.get(id=self.cash_order.sale_by.id)
+            seller_share = Setting.objects.all()[0].seller_share
+
+            # profit added
+            seller_profit = ((profit * seller_share) / 100)
+            seller.profit += seller_profit
+
+            # previous profit deducted
+            seller_prev_profit = ((self.cash_order.profit * seller_share) / 100)
+            seller.profit -= seller_prev_profit
+
             seller.save()
 
         super(ReturnCashOrder, self).save(*args, **kwargs)

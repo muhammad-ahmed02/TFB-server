@@ -1,8 +1,11 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.generics import ListAPIView
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from rest_framework import filters
 from django.http import FileResponse
+from django.db import transaction
 from datetime import datetime, timedelta
 import io
 
@@ -16,6 +19,22 @@ class ProductViewSet(ModelViewSet):
 
     filter_backends = [filters.SearchFilter]
     search_fields = ['name']
+
+    @action(detail=False, methods=['post'])
+    def bulk_update(self, request):
+        """ Provides an API to modify multiple products at once. """
+        products = []
+        with transaction.atomic():
+            for entry in request.data:
+                product = Products.objects.get(pk=entry['id'])
+                products.append(product)
+                product.purchasing_price = entry['purchasing_price']
+                product.available_stock = entry['available_stock']
+                product.save()
+            for schedule in products:
+                schedule.clean()
+        serializer = self.serializer_class(products, many=True)
+        return Response(serializer.data)
 
 
 class SellerProfileViewSet(ModelViewSet):

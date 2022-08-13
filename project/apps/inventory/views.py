@@ -3,7 +3,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import filters
 from django.http import FileResponse
-from datetime import datetime
+from datetime import datetime, timedelta
 import io
 
 from .serializers import *
@@ -55,6 +55,20 @@ class ExportCashOrderViews(ListAPIView):
     queryset = CashOrder.objects.all()
     search_fields = ['unique_id']
 
+    def get_queryset(self):
+        if "date" in self.request.query_params:
+            if self.request.query_params['date'] == "today":
+                today = datetime.today()
+                start_date = today - timedelta(days=1)
+                return CashOrder.objects.filter(created_at__range=[start_date, today])
+            elif self.request.query_params['date'] == "month":
+                current_month = datetime.today().month
+                current_year = datetime.today().year
+                start_date = datetime(current_year, current_month, 1)
+                end_date = datetime(current_year, current_month, 31)
+                return CashOrder.objects.filter(created_at__range=[start_date, end_date])
+        return CashOrder.objects.all()
+
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
@@ -99,6 +113,20 @@ class ExportReturnCashOrderViews(ListAPIView):
     filter_backends = [filters.SearchFilter]
     queryset = ReturnCashOrder.objects.all()
     search_fields = ['cash_order__unique_id']
+
+    def get_queryset(self):
+        if "date" in self.request.query_params:
+            if self.request.query_params['date'] == "today":
+                today = datetime.today()
+                start_date = today - timedelta(days=1)
+                return ReturnCashOrder.objects.filter(created_at__range=[start_date, today])
+            elif self.request.query_params['date'] == "month":
+                current_month = datetime.today().month
+                current_year = datetime.today().year
+                start_date = datetime(current_year, current_month, 1)
+                end_date = datetime(current_year, current_month, 31)
+                return ReturnCashOrder.objects.filter(created_at__range=[start_date, end_date])
+        return ReturnCashOrder.objects.all()
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()

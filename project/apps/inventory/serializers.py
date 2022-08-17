@@ -4,6 +4,14 @@ from rest_framework.serializers import ModelSerializer
 from .models import *
 
 
+class IMEISerializer(ModelSerializer):
+    class Meta:
+        model = IMEINumber
+        fields = [
+            'number'
+        ]
+
+
 class ProductSerializer(ModelSerializer):
     class Meta:
         model = Products

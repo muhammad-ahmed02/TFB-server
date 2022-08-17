@@ -36,25 +36,25 @@ class ProductAdmin(admin.ModelAdmin):
 #     list_display = ('unique_code', 'customer_name', 'total_amount')
 #     search_fields = ['unique_code']
 
-    # actions = ["download_invoice"]
+# actions = ["download_invoice"]
 
-    # def download_invoice(self, request, queryset):
-    #     for query in queryset:
-    #         html_string = render_to_string('inventory/company_invoice.html', {'queryset': query})
-    #
-    #         html = HTML(string=html_string)
-    #         html.write_pdf(target='/tmp/mypdf.pdf')
-    #
-    #         fs = FileSystemStorage('/tmp')
-    #         with fs.open('mypdf.pdf') as pdf:
-    #             response = HttpResponse(pdf, content_type='application/pdf')
-    #             response['Content-Disposition'] = 'attachment; filename="mypdf.pdf"'
-    #             return response
+# def download_invoice(self, request, queryset):
+#     for query in queryset:
+#         html_string = render_to_string('inventory/company_invoice.html', {'queryset': query})
+#
+#         html = HTML(string=html_string)
+#         html.write_pdf(target='/tmp/mypdf.pdf')
+#
+#         fs = FileSystemStorage('/tmp')
+#         with fs.open('mypdf.pdf') as pdf:
+#             response = HttpResponse(pdf, content_type='application/pdf')
+#             response['Content-Disposition'] = 'attachment; filename="mypdf.pdf"'
+#             return response
 
 
 @admin.register(Setting)
 class SettingAdmin(admin.ModelAdmin):
-    list_display = ('seller_share', 'owner_share', 'business_share', 'expense_share')
+    list_display = ('owner_share', 'expense_share')
 
 
 @admin.register(CashOrder)
@@ -70,3 +70,16 @@ class SettingProfileAdmin(admin.ModelAdmin):
 @admin.register(ReturnCashOrder)
 class ReturnCashOrderAdmin(admin.ModelAdmin):
     list_display = ['cash_order', 'reason', 'return_amount']
+
+
+@admin.register(CompanyProfile)
+class CompanyProfileAdmin(admin.ModelAdmin):
+    list_display = ['owner_name', 'owner_balance', 'business_balance']
+
+
+@admin.register(Transaction)
+class TransactionAdmin(admin.ModelAdmin):
+    list_display = ['order', 'seller', 'total_profit', 'seller_profit', 'owner_profit', 'business_profit']
+
+
+admin.site.register(IMEINumber)

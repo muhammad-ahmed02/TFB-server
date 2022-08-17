@@ -10,11 +10,21 @@ def generate_join_code(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
 
+class IMEINumber(models.Model):
+    number = models.CharField(max_length=200, unique=True, primary_key=True)
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+
+    def __str__(self):
+        return self.number
+
+
 class Products(models.Model):
     name = models.CharField(max_length=200, unique=True)
     purchasing_price = models.IntegerField()
-    image = models.ImageField(upload_to='products/', blank=True, null=True)
-    imei_or_serial_number = models.CharField(max_length=200, null=True, blank=True)
+    # image = models.ImageField(upload_to='products/', blank=True, null=True)
+    imei_or_serial_number = models.ManyToManyField(IMEINumber, blank=True)
     available_stock = models.IntegerField(default=0)
     number_of_items_saled = models.IntegerField(default=0, editable=False)
 
@@ -66,6 +76,8 @@ class OrderItems(models.Model):
 class SellerProfile(models.Model):
     username = models.CharField(max_length=54)
     profit = models.IntegerField(default=0)
+    business_share = models.PositiveIntegerField()
+    seller_share = models.PositiveIntegerField()
 
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
@@ -74,15 +86,27 @@ class SellerProfile(models.Model):
         return self.username
 
 
+class CompanyProfile(models.Model):
+    owner_name = models.CharField(max_length=54)
+    owner_balance = models.IntegerField(default=0)
+    business_balance = models.IntegerField(default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+
+    def __str__(self):
+        return self.owner_name
+
+
 class Setting(models.Model):
     status_choices = (
         ('UP', 'up'),
         ('DOWN', 'down'),
     )
 
-    seller_share = models.PositiveIntegerField()
+    # seller_share = models.PositiveIntegerField()
     owner_share = models.PositiveIntegerField()
-    business_share = models.PositiveIntegerField()
+    # business_share = models.PositiveIntegerField()
     expense_share = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=10, choices=status_choices, default="UP")
 
@@ -98,6 +122,7 @@ class CashOrder(models.Model):
     sale_price = models.IntegerField()
     profit = models.IntegerField(null=True, blank=True)
     warranty = models.PositiveIntegerField(default=0, help_text="in days")
+    imei_number = models.ForeignKey(IMEINumber, on_delete=models.CASCADE)
     # quantity = models.IntegerField(default=1, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -107,20 +132,8 @@ class CashOrder(models.Model):
         return self.unique_id
 
     def save(self, *args, **kwargs):
-
         self.profit = self.sale_price - self.product.purchasing_price
-
-        seller_share = Setting.objects.all()[0].seller_share
-        seller_profit = ((self.profit * seller_share) / 100)
-
-        seller = SellerProfile.objects.get(id=self.sale_by.id)
-        seller.profit = seller_profit
-        seller.save()
         super(CashOrder, self).save(*args, **kwargs)
-
-        '''
-        update price logic for multiple quantity
-        '''
 
 
 @receiver(post_save, sender=CashOrder, dispatch_uid="update_stock_count")
@@ -181,3 +194,38 @@ class ReturnCashOrder(models.Model):
             seller.save()
 
         super(ReturnCashOrder, self).save(*args, **kwargs)
+
+
+class Transaction(models.Model):
+    order = models.ForeignKey(CashOrder, on_delete=models.CASCADE)
+    seller = models.ForeignKey(SellerProfile, on_delete=models.CASCADE)
+    company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE)
+    total_profit = models.IntegerField()
+    seller_profit = models.IntegerField()
+    owner_profit = models.IntegerField()
+    business_profit = models.IntegerField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.order.unique_id
+
+    def save(self, *args, **kwargs):
+        self.total_profit = self.order.profit
+        self.seller_profit = ((self.order.profit * self.seller.seller_share) / 100)
+
+        settings = Setting.objects.filter().first()
+        self.owner_profit = ((self.order.profit * settings.owner_share) / 100)
+        self.business_profit = ((self.order.profit * self.seller.business_share) / 100)
+
+        seller = SellerProfile.objects.get(id=self.seller.id)
+        seller.profit += self.seller_profit
+        seller.save()
+
+        company = CompanyProfile.objects.filter(id=self.company)
+        company.owner_balance = self.owner_profit
+        company.business_balance = self.business_profit
+        company.save()
+
+        super(Transaction, self).save(*args, **kwargs)

@@ -34,3 +34,4 @@ django-mathfilters
 gunicorn==20.1.0
 whitenoise==6.1.0
 shortuuid==1.0.9
+xhtml2pdf~=0.2.8

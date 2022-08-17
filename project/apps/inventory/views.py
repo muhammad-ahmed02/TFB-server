@@ -4,12 +4,24 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import filters
-from django.http import FileResponse
+from django.http import FileResponse, HttpResponse
 from django.db import transaction
+from django.views import View
+from django.template.loader import get_template
 from datetime import datetime, timedelta
 import io
 
 from .serializers import *
+from .utils import html_to_pdf
+
+
+class IMEIViewSet(ModelViewSet):
+    serializer_class = IMEISerializer
+    queryset = IMEINumber.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['number']
 
 
 class ProductViewSet(ModelViewSet):
@@ -35,6 +47,45 @@ class ProductViewSet(ModelViewSet):
                 schedule.clean()
         serializer = self.serializer_class(products, many=True)
         return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        IMEIs = request.data['imei_or_serial_number']
+        post_IMEIs = []
+        for imei in IMEIs:
+            try:
+                post_IMEIs.append(IMEINumber.objects.get(number=imei).number)
+            except Exception as e:
+                new_imei = IMEINumber.objects.create(number=imei)
+                post_IMEIs.append(new_imei.number)
+        product = Products.objects.create(name=request.data['name'],
+                                          purchasing_price=request.data['purchasing_price'],
+                                          available_stock=request.data['available_stock'],
+                                          )
+        product.imei_or_serial_number.set(post_IMEIs)
+        return Response(self.serializer_class(product, many=False).data)
+
+    def update(self, request, *args, **kwargs):
+        product_id = request.data['id']
+        IMEIs = request.data['imei_or_serial_number']
+        post_IMEIs = []
+        for imei in IMEIs:
+            try:
+                imei_object = IMEINumber.objects.get(number=imei)
+                imei_object.number = imei
+                imei_object.save()
+                post_IMEIs.append(imei_object.number)
+            except Exception as e:
+                new_imei = IMEINumber.objects.create(number=imei)
+                post_IMEIs.append(new_imei.number)
+        product = Products.objects.get(id=product_id)
+        product.name = request.data['name']
+        product.number_of_items_saled = request.data['number_of_items_saled']
+        product.available_stock = request.data['available_stock']
+        product.purchasing_price = request.data['purchasing_price']
+        product.updated_at = request.data['updated_at']
+        product.imei_or_serial_number.set(post_IMEIs)
+        product.save()
+        return Response(self.serializer_class(product, many=False).data)
 
 
 class SellerProfileViewSet(ModelViewSet):
@@ -181,3 +232,21 @@ class ExportReturnCashOrderViews(ListAPIView):
         return FileResponse(
             content, as_attachment=True, filename='ReturnCashOrderReport.csv'
         )
+
+
+class GenerateOrderInvoice(View):
+    def get(self, request, unique_id):
+        cash_order = CashOrder.objects.get(unique_id=unique_id)
+
+        html = get_template("inventory/company_invoice.html")
+        context = {'cash_order': cash_order}
+        html_content = html.render(context)
+        with open("project/templates/inventory/temp.html", "w") as file:
+            file.write(html_content)
+            # render_to_string(
+            #     "inventory/company_invoice.html", {
+            #         "cash_order": cash_order
+            #     }
+
+        pdf = html_to_pdf("inventory/temp.html")
+        return HttpResponse(pdf, content_type="application/pdf")

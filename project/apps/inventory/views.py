@@ -8,7 +8,6 @@ from django.http import FileResponse, HttpResponse
 from django.db import transaction
 from django.views import View
 from django.template.loader import get_template
-from datetime import datetime, timedelta
 import io
 
 from .serializers import *
@@ -145,50 +144,73 @@ class ExportCashOrderViews(ListAPIView):
     search_fields = ['unique_id']
 
     def get_queryset(self):
-        if "date" in self.request.query_params:
-            if self.request.query_params['date'] == "today":
-                today = datetime.today()
-                start_date = today - timedelta(days=1)
-                return CashOrder.objects.filter(created_at__range=[start_date, today])
-            elif self.request.query_params['date'] == "month":
-                current_month = datetime.today().month
-                current_year = datetime.today().year
-                start_date = datetime(current_year, current_month, 1)
-                end_date = datetime(current_year, current_month, 31)
-                return CashOrder.objects.filter(created_at__range=[start_date, end_date])
-        return CashOrder.objects.all()
+        try:
+            start_date = self.request.query_params['start']
+            end_date = self.request.query_params['end']
+            return CashOrder.objects.filter(created_at__range=[start_date, end_date])
+        except Exception as e:
+            print(e)
+            return {}
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
         content = io.BytesIO()
-        row = "{unique_id}, {product_name}, {sale_price}, {cost_price}, {sale_by}, {profit}, {warranty}, " \
-              "{date}\n "
+        row = "{unique_id}, {product_name}, {sale_price}, {cost_price}, {total_profit}, {sale_by}, {seller_profit}, " \
+              "{owner_profit}, {business_profit}, {warranty}, {date}\n"
         content.write(
             row.format(
                 unique_id="Unique ID",
                 product_name="Product Name",
                 sale_price="Sale Price",
                 cost_price="Cost Price",
+                total_profit="Total Profit",
                 sale_by="Sale By",
-                profit="Profit",
+                seller_profit="Seller Profit",
+                owner_profit="Owner Profit",
+                business_profit="Business Profit",
                 warranty="Warranty",
                 date="Date"
             ).encode("utf-8")
         )
+
+        total_business = 0
+        total_profit = 0
+
         for order in queryset:
+            transaction = Transaction.objects.get(order=order.id)
+            total_business += order.sale_price
+            total_profit += transaction.total_profit
+
             content.write(
                 row.format(
                     unique_id=order.unique_id,
                     product_name=order.product.name,
                     sale_price=order.sale_price,
                     cost_price=order.product.purchasing_price,
+                    total_profit=transaction.total_profit,
                     sale_by=order.sale_by.username,
-                    profit=order.profit,
+                    seller_profit=transaction.seller_profit,
+                    owner_profit=transaction.owner_profit,
+                    business_profit=transaction.business_profit,
                     warranty=f"{order.warranty} Days",
                     date=order.created_at.strftime("%d-%m-%Y %H:%M:%S")
                 ).encode("utf-8")
             )
+
+        total_row = "\n{total_business}, {total_profit}\n"
+        content.write(
+            total_row.format(
+                total_business="Total Business",
+                total_profit="Total Profit",
+            ).encode("utf-8")
+        )
+        content.write(
+            total_row.format(
+                total_business=f"PKR {total_business}",
+                total_profit=f"PKR {total_profit}",
+            ).encode("utf-8")
+        )
         content.seek(0)
         return FileResponse(
             content, as_attachment=True, filename='CashOrderReport.csv'
@@ -204,18 +226,13 @@ class ExportReturnCashOrderViews(ListAPIView):
     search_fields = ['cash_order__unique_id']
 
     def get_queryset(self):
-        if "date" in self.request.query_params:
-            if self.request.query_params['date'] == "today":
-                today = datetime.today()
-                start_date = today - timedelta(days=1)
-                return ReturnCashOrder.objects.filter(created_at__range=[start_date, today])
-            elif self.request.query_params['date'] == "month":
-                current_month = datetime.today().month
-                current_year = datetime.today().year
-                start_date = datetime(current_year, current_month, 1)
-                end_date = datetime(current_year, current_month, 31)
-                return ReturnCashOrder.objects.filter(created_at__range=[start_date, end_date])
-        return ReturnCashOrder.objects.all()
+        try:
+            start_date = self.request.query_params['start']
+            end_date = self.request.query_params['end']
+            return ReturnCashOrder.objects.filter(created_at__range=[start_date, end_date])
+        except Exception as e:
+            print(e)
+            return {}
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -262,10 +279,6 @@ class GenerateOrderInvoice(View):
         html_content = html.render(context)
         with open("project/templates/inventory/temp.html", "w") as file:
             file.write(html_content)
-            # render_to_string(
-            #     "inventory/company_invoice.html", {
-            #         "cash_order": cash_order
-            #     }
 
         pdf = html_to_pdf("inventory/temp.html")
         return HttpResponse(pdf, content_type="application/pdf")

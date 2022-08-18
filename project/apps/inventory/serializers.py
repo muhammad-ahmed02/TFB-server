@@ -62,3 +62,9 @@ class ReturnCashOrderSerializer(ModelSerializer):
         except Exception as e:
             print(e)
             return {}
+
+
+class CompanyProfileSerializer(ModelSerializer):
+    class Meta:
+        model = CompanyProfile
+        fields = "__all__"

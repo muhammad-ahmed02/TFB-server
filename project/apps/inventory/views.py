@@ -250,3 +250,11 @@ class GenerateOrderInvoice(View):
 
         pdf = html_to_pdf("inventory/temp.html")
         return HttpResponse(pdf, content_type="application/pdf")
+
+
+class CompanyProfileViewSet(ModelViewSet):
+    serializer_class = CompanyProfileSerializer
+    queryset = CompanyProfile.objects.all()
+    permission_classes = [IsAuthenticated]
+    pagination_class = None
+    http_method_names = ['get', 'put', 'patch']

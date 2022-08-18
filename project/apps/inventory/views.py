@@ -104,11 +104,30 @@ class SettingViewSet(ModelViewSet):
 
 class CashOrderViewSet(ModelViewSet):
     serializer_class = CashOrderSerializer
-    queryset = CashOrder.objects.all()
+    queryset = CashOrder.objects.all().order_by('-updated_at')
     permission_classes = [IsAuthenticated]
 
     filter_backends = [filters.SearchFilter]
     search_fields = ['unique_id']
+
+    def create(self, request, *args, **kwargs):
+        seller = SellerProfile.objects.get(id=request.data['sale_by'])
+        product = Products.objects.get(id=request.data['product'])
+
+        cash_order = CashOrder.objects.create(
+            customer_name=request.data['customer_name'],
+            product=product,
+            sale_by=seller,
+            sale_price=request.data['sale_price'],
+            warranty=request.data['warranty'],
+            imei_number=IMEINumber.objects.get(number=request.data['imei_number']),
+        )
+        Transaction.objects.create(
+            order=cash_order,
+            seller=seller,
+            company=CompanyProfile.objects.get()
+        )
+        return Response(self.serializer_class(cash_order, many=False).data)
 
 
 class ReturnCashOrderViewSet(ModelViewSet):

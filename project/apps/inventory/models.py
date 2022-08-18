@@ -25,7 +25,7 @@ class Products(models.Model):
     purchasing_price = models.IntegerField()
     # image = models.ImageField(upload_to='products/', blank=True, null=True)
     imei_or_serial_number = models.ManyToManyField(IMEINumber, blank=True)
-    available_stock = models.IntegerField(default=0)
+    available_stock = models.PositiveIntegerField(default=0)
     number_of_items_saled = models.IntegerField(default=0, editable=False)
 
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
@@ -133,6 +133,11 @@ class CashOrder(models.Model):
 
     def save(self, *args, **kwargs):
         self.profit = self.sale_price - self.product.purchasing_price
+
+        product = Products.objects.get(id=self.product.id)
+        product.imei_or_serial_number.remove(self.imei_number.number)
+        product.save()
+
         super(CashOrder, self).save(*args, **kwargs)
 
 
@@ -223,9 +228,9 @@ class Transaction(models.Model):
         seller.profit += self.seller_profit
         seller.save()
 
-        company = CompanyProfile.objects.filter(id=self.company)
-        company.owner_balance = self.owner_profit
-        company.business_balance = self.business_profit
+        company = CompanyProfile.objects.get(id=self.company.id)
+        company.owner_balance += self.owner_profit
+        company.business_balance += self.business_profit
         company.save()
 
         super(Transaction, self).save(*args, **kwargs)

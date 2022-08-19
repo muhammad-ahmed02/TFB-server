@@ -107,7 +107,9 @@ class CashOrderViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     filter_backends = [filters.SearchFilter]
-    search_fields = ['unique_id']
+    search_fields = [
+        'unique_id', 'product__name', 'created_at', 'updated_at', 'imei_number__number', 'sale_by__username'
+    ]
 
     def create(self, request, *args, **kwargs):
         seller = SellerProfile.objects.get(id=request.data['sale_by'])

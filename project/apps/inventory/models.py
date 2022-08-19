@@ -122,7 +122,7 @@ class CashOrder(models.Model):
     sale_price = models.IntegerField()
     profit = models.IntegerField(null=True, blank=True)
     warranty = models.PositiveIntegerField(default=0, help_text="in days")
-    imei_number = models.ForeignKey(IMEINumber, on_delete=models.CASCADE)
+    imei_or_serial_number = models.ForeignKey(IMEINumber, on_delete=models.CASCADE)
     # quantity = models.IntegerField(default=1, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -135,7 +135,7 @@ class CashOrder(models.Model):
         self.profit = self.sale_price - self.product.purchasing_price
 
         product = Products.objects.get(id=self.product.id)
-        product.imei_or_serial_number.remove(self.imei_number.number)
+        product.imei_or_serial_number.remove(self.imei_or_serial_number.number)
         product.save()
 
         super(CashOrder, self).save(*args, **kwargs)

@@ -108,7 +108,7 @@ class CashOrderViewSet(ModelViewSet):
 
     filter_backends = [filters.SearchFilter]
     search_fields = [
-        'unique_id', 'product__name', 'created_at', 'updated_at', 'imei_number__number', 'sale_by__username'
+        'unique_id', 'product__name', 'created_at', 'updated_at', 'imei_or_serial_number__number', 'sale_by__username'
     ]
 
     def create(self, request, *args, **kwargs):
@@ -121,7 +121,7 @@ class CashOrderViewSet(ModelViewSet):
             sale_by=seller,
             sale_price=request.data['sale_price'],
             warranty=request.data['warranty'],
-            imei_number=IMEINumber.objects.get(number=request.data['imei_number']),
+            imei_or_serial_number=IMEINumber.objects.get(number=request.data['imei_or_serial_number']),
         )
         Transaction.objects.create(
             order=cash_order,

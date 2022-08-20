@@ -24,9 +24,9 @@ class ProductAdmin(admin.ModelAdmin):
     # image_tag.short_description = 'Image'
 
 
-# class OrderItemsInline(admin.TabularInline):
-#     model = OrderItems
-#     extra = 0
+class CashOrderItemsInline(admin.TabularInline):
+    model = CashOrderItem
+    extra = 0
 
 
 # @admin.register(Order)
@@ -58,7 +58,8 @@ class SettingAdmin(admin.ModelAdmin):
 
 @admin.register(CashOrder)
 class CashOrderAdmin(admin.ModelAdmin):
-    list_display = ('unique_id', 'customer_name', 'sale_price', 'sale_by', 'profit_per_device', 'product_stock')
+    inlines = [CashOrderItemsInline]
+    list_display = ('unique_id', 'customer_name', 'sale_by', 'total_amount', 'total_profit')
 
 
 @admin.register(SellerProfile)
@@ -84,3 +85,4 @@ class TransactionAdmin(admin.ModelAdmin):
 admin.site.register(IMEINumber)
 admin.site.register(Product)
 admin.site.register(Vendor)
+admin.site.register(CashOrderItem)

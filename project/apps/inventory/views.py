@@ -111,6 +111,12 @@ class SettingViewSet(ModelViewSet):
     http_method_names = ['get', 'put', 'patch']
 
 
+class CashOrderItemViewSet(ModelViewSet):
+    serializer_class = CashOrderItemSerializer
+    queryset = CashOrderItem.objects.all().order_by('-created_at')
+    permission_classes = [IsAuthenticated]
+
+
 class CashOrderViewSet(ModelViewSet):
     serializer_class = CashOrderSerializer
     queryset = CashOrder.objects.all().order_by('-updated_at')
@@ -118,27 +124,27 @@ class CashOrderViewSet(ModelViewSet):
 
     filter_backends = [filters.SearchFilter]
     search_fields = [
-        'unique_id', 'product__name', 'created_at', 'updated_at', 'imei_or_serial_number__number', 'sale_by__username'
+        'unique_id', 'created_at', 'updated_at', 'sale_by__username'
     ]
 
-    def create(self, request, *args, **kwargs):
-        seller = SellerProfile.objects.get(id=request.data['sale_by'])
-        product = Products.objects.get(id=request.data['product'])
-
-        cash_order = CashOrder.objects.create(
-            customer_name=request.data['customer_name'],
-            product=product,
-            sale_by=seller,
-            sale_price=request.data['sale_price'],
-            warranty=request.data['warranty'],
-            imei_or_serial_number=IMEINumber.objects.get(number=request.data['imei_or_serial_number']),
-        )
-        Transaction.objects.create(
-            order=cash_order,
-            seller=seller,
-            company=CompanyProfile.objects.get()
-        )
-        return Response(self.serializer_class(cash_order, many=False).data)
+    # def create(self, request, *args, **kwargs):
+    #     seller = SellerProfile.objects.get(id=request.data['sale_by'])
+    #     product = Products.objects.get(id=request.data['product'])
+    #
+    #     cash_order = CashOrder.objects.create(
+    #         customer_name=request.data['customer_name'],
+    #         product=product,
+    #         sale_by=seller,
+    #         sale_price=request.data['sale_price'],
+    #         warranty=request.data['warranty'],
+    #         imei_or_serial_number=IMEINumber.objects.get(number=request.data['imei_or_serial_number']),
+    #     )
+    #     Transaction.objects.create(
+    #         order=cash_order,
+    #         seller=seller,
+    #         company=CompanyProfile.objects.get()
+    #     )
+    #     return Response(self.serializer_class(cash_order, many=False).data)
 
 
 class ReturnCashOrderViewSet(ModelViewSet):
@@ -197,9 +203,9 @@ class ExportCashOrderViews(ListAPIView):
             content.write(
                 row.format(
                     unique_id=order.unique_id,
-                    product_name=order.product.name,
+                    product_name=order.product_stock.product.name,
                     sale_price=order.sale_price,
-                    cost_price=order.product.purchasing_price,
+                    cost_price=order.product_stock.purchasing_price,
                     total_profit=transaction.total_profit,
                     sale_by=order.sale_by.username,
                     seller_profit=transaction.seller_profit,

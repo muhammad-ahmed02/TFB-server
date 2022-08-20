@@ -51,23 +51,33 @@ class SettingSerializer(ModelSerializer):
         fields = '__all__'
 
 
+class CashOrderItemSerializer(ModelSerializer):
+    product_name = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = CashOrderItem
+        fields = '__all__'
+
+    def get_product_name(self, obj):
+        return obj.product.name
+
+
 class CashOrderSerializer(ModelSerializer):
-    product_detail = serializers.SerializerMethodField(read_only=True)
     seller_name = serializers.SerializerMethodField(read_only=True)
+    items = serializers.SerializerMethodField(read_only=False)
 
     class Meta:
         model = CashOrder
-        fields = '__all__'
-
-    def get_product_detail(self, obj):
-        try:
-            return ProductSerializer(ProductStockIn.objects.filter(id=obj.product_stock.id), many=True).data
-        except Exception as e:
-            print(e)
-            return {}
+        fields = [
+            'id', 'unique_id', 'customer_name', 'sale_by', 'seller_name', 'warranty', 'quantity',
+            'total_profit', 'total_amount', 'updated_at', 'created_at', 'items',
+        ]
 
     def get_seller_name(self, obj):
         return obj.sale_by.username
+
+    def get_items(self, obj):
+        return CashOrderItemSerializer(CashOrderItem.objects.filter(cash_order=obj.id), many=True).data
 
 
 class ReturnCashOrderSerializer(ModelSerializer):

@@ -132,36 +132,59 @@ class Setting(models.Model):
 class CashOrder(models.Model):
     unique_id = models.CharField(max_length=10, default=generate_join_code, unique=True)
     customer_name = models.CharField(max_length=54, null=True, blank=True)
-    product_stock = models.ForeignKey(ProductStockIn, on_delete=models.CASCADE)
     sale_by = models.ForeignKey(SellerProfile, on_delete=models.CASCADE)
-    sale_price = models.IntegerField()
-    profit_per_device = models.IntegerField(null=True, blank=True)
-    total_profit = models.IntegerField(null=True, blank=True)
-    warranty = models.PositiveIntegerField(default=0, help_text="in days")
-    imei_or_serial_number = models.ManyToManyField(IMEINumber)
-    quantity = models.IntegerField(default=1)
-    total_amount = models.IntegerField(null=True, blank=True, help_text="Calculated Automatically")
+    warranty = models.PositiveIntegerField(default=0, help_text="days")
 
+    quantity = models.IntegerField(default=1)
+    total_profit = models.IntegerField(null=True, blank=True)
+    total_amount = models.IntegerField(null=True, blank=True, help_text="Calculated Automatically")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.unique_id
 
+
+class CashOrderItem(models.Model):
+    cash_order = models.ForeignKey(CashOrder, on_delete=models.CASCADE, null=True, blank=True)
+    price = models.PositiveIntegerField()
+    imei_or_serial_number = models.ForeignKey(IMEINumber, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+
+    def __str__(self):
+        return self.product.name
+
+    def calculate_total_values(self):
+        order_items = CashOrderItem.objects.filter(cash_order=self.cash_order.id)
+
+        total_quantity = len(order_items)
+        amount = 0
+        profit = 0
+        for item in order_items:
+            amount += item.price
+            product_stock = ProductStockIn.objects.get(imei_or_serial_number=item.imei_or_serial_number)
+            profit += item.price - product_stock.purchasing_price
+
+        order = CashOrder.objects.get(id=self.cash_order.id)
+        order.total_amount = amount
+        order.total_profit = profit
+        order.quantity = total_quantity
+        order.save()
+
     def save(self, *args, **kwargs):
-        self.profit_per_device = self.sale_price - self.product_stock.purchasing_price
-        self.total_profit = self.profit_per_device * self.quantity
-        self.total_amount = self.sale_price * self.quantity
-        super(CashOrder, self).save(*args, **kwargs)
+        super(CashOrderItem, self).save(*args, **kwargs)
+        self.calculate_total_values()
 
 
-@receiver(post_save, sender=CashOrder, dispatch_uid="update_stock_count")
+@receiver(post_save, sender=CashOrderItem, dispatch_uid="update_stock_count")
 def update_stock(sender, instance, **kwargs):
-    quantity = instance.quantity
-    product_stock_in = ProductStockIn.objects.get(id=instance.product_stock.id)
-    product_stock_in.available_stock -= quantity
-    product_stock_in.sold += quantity
-    product_stock_in.save()
+    product_stock = ProductStockIn.objects.get(imei_or_serial_number=instance.imei_or_serial_number)
+    product_stock.available_stock -= 1
+    product_stock.sold += 1
+    product_stock.save()
 
 
 class ReturnCashOrder(models.Model):

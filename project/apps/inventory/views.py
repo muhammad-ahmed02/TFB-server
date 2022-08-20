@@ -25,7 +25,19 @@ class IMEIViewSet(ModelViewSet):
 
 class ProductViewSet(ModelViewSet):
     serializer_class = ProductSerializer
-    queryset = Products.objects.all().order_by('-created_at')
+    queryset = Product.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+class VendorViewSet(ModelViewSet):
+    serializer_class = VendorSerializer
+    queryset = Vendor.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+class ProductStockInViewSet(ModelViewSet):
+    serializer_class = ProductStockInSerializer
+    queryset = ProductStockIn.objects.all().order_by('-created_at')
     permission_classes = [IsAuthenticated]
 
     filter_backends = [filters.SearchFilter]
@@ -37,7 +49,7 @@ class ProductViewSet(ModelViewSet):
         products = []
         with transaction.atomic():
             for entry in request.data:
-                product = Products.objects.get(pk=entry['id'])
+                product = ProductStockIn.objects.get(pk=entry['id'])
                 products.append(product)
                 product.purchasing_price = entry['purchasing_price']
                 product.available_stock = entry['available_stock']
@@ -51,15 +63,13 @@ class ProductViewSet(ModelViewSet):
         IMEIs = request.data['imei_or_serial_number']
         post_IMEIs = []
         for imei in IMEIs:
-            try:
-                post_IMEIs.append(IMEINumber.objects.get(number=imei).number)
-            except Exception as e:
-                new_imei = IMEINumber.objects.create(number=imei)
-                post_IMEIs.append(new_imei.number)
-        product = Products.objects.create(name=request.data['name'],
-                                          purchasing_price=request.data['purchasing_price'],
-                                          available_stock=request.data['available_stock'],
-                                          )
+            new_imei, found = IMEINumber.objects.get_or_create(number=imei)
+            post_IMEIs.append(new_imei.number)
+        product = ProductStockIn.objects.create(product=Product.objects.get(id=request.data['product']),
+                                                vendor=Vendor.objects.get(id=request.data['vendor']),
+                                                purchasing_price=request.data['purchasing_price'],
+                                                available_stock=request.data['available_stock'],
+                                                )
         product.imei_or_serial_number.set(post_IMEIs)
         return Response(self.serializer_class(product, many=False).data)
 
@@ -76,9 +86,9 @@ class ProductViewSet(ModelViewSet):
             except Exception as e:
                 new_imei = IMEINumber.objects.create(number=imei)
                 post_IMEIs.append(new_imei.number)
-        product = Products.objects.get(id=product_id)
+        product = ProductStockIn.objects.get(id=product_id)
         product.name = request.data['name']
-        product.number_of_items_saled = request.data['number_of_items_saled']
+        product.sold = request.data['number_of_items_sold']
         product.available_stock = request.data['available_stock']
         product.purchasing_price = request.data['purchasing_price']
         product.updated_at = request.data['updated_at']

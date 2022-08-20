@@ -3,16 +3,15 @@ from django.core.files.storage import FileSystemStorage
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils.html import format_html
-# from weasyprint import HTML
 
 from .models import *
 
 
-@admin.register(Products)
+@admin.register(ProductStockIn)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'purchasing_price', 'available_stock', 'number_of_items_saled')
+    list_display = ('product', 'purchasing_price', 'available_stock', 'sold', 'on_credit', 'on_claim')
 
-    search_fields = ('name', 'purchasing_price', 'available_stock', 'number_of_items_saled')
+    search_fields = ('product__name', 'purchasing_price', 'available_stock', 'sold', 'on_credit', 'on_claim')
 
     # def image_tag(self, obj):
     #     if obj.image:
@@ -59,12 +58,12 @@ class SettingAdmin(admin.ModelAdmin):
 
 @admin.register(CashOrder)
 class CashOrderAdmin(admin.ModelAdmin):
-    list_display = ('unique_id', 'customer_name', 'sale_price', 'sale_by', 'profit', 'product')
+    list_display = ('unique_id', 'customer_name', 'sale_price', 'sale_by', 'profit_per_device', 'product_stock')
 
 
 @admin.register(SellerProfile)
-class SettingProfileAdmin(admin.ModelAdmin):
-    list_display = ('username', 'profit')
+class SellerProfileAdmin(admin.ModelAdmin):
+    list_display = ('username', 'profit', 'seller_share', 'business_share')
 
 
 @admin.register(ReturnCashOrder)
@@ -83,3 +82,5 @@ class TransactionAdmin(admin.ModelAdmin):
 
 
 admin.site.register(IMEINumber)
+admin.site.register(Product)
+admin.site.register(Vendor)

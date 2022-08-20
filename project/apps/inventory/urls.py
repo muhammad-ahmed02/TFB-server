@@ -6,6 +6,8 @@ from .views import *
 router = SimpleRouter()
 
 router.register(r"products", ProductViewSet, basename="Products")
+router.register(r"vendor", VendorViewSet, basename="Vendors")
+router.register(r"products-stock", ProductStockInViewSet, basename="Product Stock")
 router.register(r"settings", SettingViewSet, basename="Settings")
 router.register(r"cashorder", CashOrderViewSet, basename="CashOrder")
 router.register(r"return-cashorder", ReturnCashOrderViewSet, basename="Return CashOrder")

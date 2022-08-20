@@ -14,7 +14,28 @@ class IMEISerializer(ModelSerializer):
 
 class ProductSerializer(ModelSerializer):
     class Meta:
-        model = Products
+        model = Product
+        fields = '__all__'
+
+
+class VendorSerializer(ModelSerializer):
+    class Meta:
+        model = Vendor
+        fields = '__all__'
+
+
+class ProductStockInSerializer(ModelSerializer):
+    name = serializers.SerializerMethodField(read_only=True)
+    vendor = serializers.SerializerMethodField(read_only=True)
+
+    def get_name(self, obj):
+        return obj.product.name
+
+    def get_vendor(self, obj):
+        return obj.vendor.name
+
+    class Meta:
+        model = ProductStockIn
         fields = '__all__'
 
 
@@ -40,7 +61,7 @@ class CashOrderSerializer(ModelSerializer):
 
     def get_product_detail(self, obj):
         try:
-            return ProductSerializer(Products.objects.filter(id=obj.product.id), many=True).data
+            return ProductSerializer(ProductStockIn.objects.filter(id=obj.product_stock.id), many=True).data
         except Exception as e:
             print(e)
             return {}

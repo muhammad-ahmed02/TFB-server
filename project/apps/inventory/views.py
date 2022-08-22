@@ -3,7 +3,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import filters
+from rest_framework import filters, status
 from django.http import FileResponse, HttpResponse
 from django.db import transaction
 from django.views import View
@@ -41,7 +41,28 @@ class ProductStockInViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     filter_backends = [filters.SearchFilter]
-    search_fields = ['name']
+    search_fields = ['product__name', 'vendor__name', 'imei_or_serial_number__number']
+
+    def get_queryset(self):
+        if 'available' in self.request.query_params:
+            return ProductStockIn.objects.filter(available_stock__gt=0).order_by('-created_at')
+        return ProductStockIn.objects.all().order_by('-created_at')
+
+    def get(self, request):
+        queryset = self.get_queryset()
+
+        asset_value = 0
+        for query in queryset:
+            asset_value += query.asset
+        serializer = self.serializer_class(queryset, many=True)
+
+        tmp = serializer.data
+
+        print(asset_value)
+        response = self.get_paginated_response(tmp)
+        response.data['asset_value'] = asset_value
+
+        return Response(data=response.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'])
     def bulk_update(self, request):
@@ -84,6 +105,7 @@ class ProductStockInViewSet(ModelViewSet):
                 imei_object.save()
                 post_IMEIs.append(imei_object.number)
             except Exception as e:
+                print(e)
                 new_imei = IMEINumber.objects.create(number=imei)
                 post_IMEIs.append(new_imei.number)
         product = ProductStockIn.objects.get(id=product_id)
@@ -127,24 +149,25 @@ class CashOrderViewSet(ModelViewSet):
         'unique_id', 'created_at', 'updated_at', 'sale_by__username'
     ]
 
-    # def create(self, request, *args, **kwargs):
-    #     seller = SellerProfile.objects.get(id=request.data['sale_by'])
-    #     product = Products.objects.get(id=request.data['product'])
-    #
-    #     cash_order = CashOrder.objects.create(
-    #         customer_name=request.data['customer_name'],
-    #         product=product,
-    #         sale_by=seller,
-    #         sale_price=request.data['sale_price'],
-    #         warranty=request.data['warranty'],
-    #         imei_or_serial_number=IMEINumber.objects.get(number=request.data['imei_or_serial_number']),
-    #     )
-    #     Transaction.objects.create(
-    #         order=cash_order,
-    #         seller=seller,
-    #         company=CompanyProfile.objects.get()
-    #     )
-    #     return Response(self.serializer_class(cash_order, many=False).data)
+    def create(self, request, *args, **kwargs):
+        seller = SellerProfile.objects.get(id=request.data['sale_by'])
+        customer_name = request.data['customer_name']
+        warranty = request.data['warranty']
+        items = request.data['items']
+
+        cash_order = CashOrder.objects.create(
+            customer_name=customer_name,
+            sale_by=seller,
+            warranty=warranty,
+        )
+        for item in items:
+            imei_number = IMEINumber.objects.get(number=item['imei_or_serial_number'])
+            CashOrderItem.objects.create(cash_order=cash_order,
+                                         price=item['price'],
+                                         imei_or_serial_number=imei_number,
+                                         product=Product.objects.get(id=item['product']))
+
+        return Response(self.serializer_class(cash_order, many=False).data)
 
 
 class ReturnCashOrderViewSet(ModelViewSet):

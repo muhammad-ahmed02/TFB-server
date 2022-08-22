@@ -48,12 +48,17 @@ class ProductStockIn(models.Model):
     sold = models.PositiveIntegerField(default=0)
     on_credit = models.PositiveIntegerField(default=0)
     on_claim = models.PositiveIntegerField(default=0)
+    asset = models.PositiveIntegerField(default=0)
 
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
 
     def __str__(self):
         return self.product.name
+
+    def save(self, *args, **kwargs):
+        self.asset = self.purchasing_price * self.available_stock
+        super(ProductStockIn, self).save(*args, **kwargs)
 
 
 # class Order(models.Model):
@@ -174,6 +179,13 @@ class CashOrderItem(models.Model):
         order.quantity = total_quantity
         order.save()
 
+        if len(Transaction.objects.filter(order=order)) == 0:
+            Transaction.objects.create(
+                order=order,
+                seller=order.sale_by,
+                company=CompanyProfile.objects.get()
+            )
+
     def save(self, *args, **kwargs):
         super(CashOrderItem, self).save(*args, **kwargs)
         self.calculate_total_values()
@@ -238,27 +250,25 @@ class ReturnCashOrder(models.Model):
 
 
 class Transaction(models.Model):
-    order = models.ForeignKey(CashOrder, on_delete=models.CASCADE)
-    seller = models.ForeignKey(SellerProfile, on_delete=models.CASCADE)
-    company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE)
-    total_profit = models.IntegerField()
-    seller_profit = models.IntegerField()
-    owner_profit = models.IntegerField()
-    business_profit = models.IntegerField()
+    order = models.ForeignKey(CashOrder, on_delete=models.CASCADE, null=True, blank=True)
+    seller = models.ForeignKey(SellerProfile, on_delete=models.CASCADE, null=True, blank=True)
+    company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, null=True, blank=True)
+    total_profit = models.IntegerField(null=True, blank=True)
+    seller_profit = models.IntegerField(null=True, blank=True)
+    owner_profit = models.IntegerField(null=True, blank=True)
+    business_profit = models.IntegerField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return self.order.unique_id
-
     def save(self, *args, **kwargs):
-        self.total_profit = self.order.profit
-        self.seller_profit = ((self.order.profit * self.seller.seller_share) / 100)
+        total_profit = self.order.total_profit
+        self.total_profit = total_profit
+        self.seller_profit = ((total_profit * self.seller.seller_share) / 100)
 
         settings = Setting.objects.filter().first()
-        self.owner_profit = ((self.order.profit * settings.owner_share) / 100)
-        self.business_profit = ((self.order.profit * self.seller.business_share) / 100)
+        self.owner_profit = ((total_profit * settings.owner_share) / 100)
+        self.business_profit = ((total_profit * self.seller.business_share) / 100)
 
         seller = SellerProfile.objects.get(id=self.seller.id)
         seller.profit += self.seller_profit
@@ -268,5 +278,4 @@ class Transaction(models.Model):
         company.owner_balance += self.owner_profit
         company.business_balance += self.business_profit
         company.save()
-
         super(Transaction, self).save(*args, **kwargs)

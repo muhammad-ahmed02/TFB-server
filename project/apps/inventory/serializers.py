@@ -32,7 +32,7 @@ class ProductStockInSerializer(ModelSerializer):
         return obj.product.name
 
     def get_vendor(self, obj):
-        return obj.vendor.name
+        return VendorSerializer(Vendor.objects.get(id=obj.vendor.id), many=False).data
 
     class Meta:
         model = ProductStockIn
@@ -78,6 +78,23 @@ class CashOrderSerializer(ModelSerializer):
 
     def get_items(self, obj):
         return CashOrderItemSerializer(CashOrderItem.objects.filter(cash_order=obj.id), many=True).data
+
+
+class CreditItemSerializer(ModelSerializer):
+    class Meta:
+        model = CreditItem
+        fields = '__all__'
+
+
+class CreditSerializer(ModelSerializer):
+    items = serializers.SerializerMethodField(read_only=False)
+
+    class Meta:
+        model = Credit
+        fields = '__all__'
+
+    def get_items(self, obj):
+        return CreditItemSerializer(CreditItem.objects.filter(credit=obj.id), many=True).data
 
 
 class ReturnCashOrderSerializer(ModelSerializer):

@@ -1,15 +1,11 @@
 from django.contrib import admin
-from django.core.files.storage import FileSystemStorage
-from django.http import HttpResponse
-from django.template.loader import render_to_string
-from django.utils.html import format_html
 
 from .models import *
 
 
 @admin.register(ProductStockIn)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('product', 'purchasing_price', 'available_stock', 'sold', 'on_credit', 'on_claim')
+    list_display = ('product', 'purchasing_price', 'available_stock', 'sold', 'on_credit', 'on_claim', 'asset')
 
     search_fields = ('product__name', 'purchasing_price', 'available_stock', 'sold', 'on_credit', 'on_claim')
 
@@ -29,26 +25,20 @@ class CashOrderItemsInline(admin.TabularInline):
     extra = 0
 
 
-# @admin.register(Order)
-# class OrderAdmin(admin.ModelAdmin):
-#     inlines = [OrderItemsInline]
-#     list_display = ('unique_code', 'customer_name', 'total_amount')
-#     search_fields = ['unique_code']
+class CreditItemInline(admin.TabularInline):
+    model = CreditItem
+    extra = 0
 
-# actions = ["download_invoice"]
 
-# def download_invoice(self, request, queryset):
-#     for query in queryset:
-#         html_string = render_to_string('inventory/company_invoice.html', {'queryset': query})
-#
-#         html = HTML(string=html_string)
-#         html.write_pdf(target='/tmp/mypdf.pdf')
-#
-#         fs = FileSystemStorage('/tmp')
-#         with fs.open('mypdf.pdf') as pdf:
-#             response = HttpResponse(pdf, content_type='application/pdf')
-#             response['Content-Disposition'] = 'attachment; filename="mypdf.pdf"'
-#             return response
+@admin.register(Credit)
+class CreditAdmin(admin.ModelAdmin):
+    inlines = [CreditItemInline]
+    list_display = ['payment_status', 'quantity']
+
+
+@admin.register(Claim)
+class ClaimAdmin(admin.ModelAdmin):
+    list_display = ['product', 'vendor', 'imei_or_serial_number', 'reason']
 
 
 @admin.register(Setting)
@@ -86,3 +76,4 @@ admin.site.register(IMEINumber)
 admin.site.register(Product)
 admin.site.register(Vendor)
 admin.site.register(CashOrderItem)
+admin.site.register(CreditItem)

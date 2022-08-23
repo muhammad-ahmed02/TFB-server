@@ -48,22 +48,6 @@ class ProductStockInViewSet(ModelViewSet):
             return ProductStockIn.objects.filter(available_stock__gt=0).order_by('-created_at')
         return ProductStockIn.objects.all().order_by('-created_at')
 
-    def get(self, request):
-        queryset = self.get_queryset()
-
-        asset_value = 0
-        for query in queryset:
-            asset_value += query.asset
-        serializer = self.serializer_class(queryset, many=True)
-
-        tmp = serializer.data
-
-        print(asset_value)
-        response = self.get_paginated_response(tmp)
-        response.data['asset_value'] = asset_value
-
-        return Response(data=response.data, status=status.HTTP_200_OK)
-
     @action(detail=False, methods=['post'])
     def bulk_update(self, request):
         """ Provides an API to modify multiple products at once. """
@@ -168,6 +152,49 @@ class CashOrderViewSet(ModelViewSet):
                                          product=Product.objects.get(id=item['product']))
 
         return Response(self.serializer_class(cash_order, many=False).data)
+
+
+class CreditViewSet(ModelViewSet):
+    serializer_class = CreditSerializer
+    queryset = Credit.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        items = request.data['items']
+
+        credit = Credit.objects.create(payment_status=request.data['payment_status'])
+        for item in items:
+            imei_number = IMEINumber.objects.get(number=item['imei_or_serial_number'])
+            product = item['product']
+            price = item['price']
+
+            CreditItem.objects.create(credit=credit,
+                                      price=price,
+                                      imei_or_serial_number=imei_number,
+                                      product=Product.objects.get(id=product))
+
+        return Response(self.serializer_class(credit, many=False).data)
+
+    def update(self, request, *args, **kwargs):
+        status = request.data['payment_status']
+        credit = Credit.objects.get(id=kwargs['pk'])
+        credit.payment_status = status
+        credit.save()
+        credit_items = CreditItem.objects.filter(credit=credit)
+
+        for item in credit_items:
+            product_stock = ProductStockIn.objects.get(imei_or_serial_number=item.imei_or_serial_number.number)
+
+            if status == "PENDING":
+                product_stock.on_credit += 1
+                product_stock.available_stock -= 1
+                product_stock.save()
+            else:
+                product_stock.on_credit -= 1
+                product_stock.sold += 1
+                product_stock.save()
+
+        return Response(self.serializer_class(credit, many=False).data)
 
 
 class ReturnCashOrderViewSet(ModelViewSet):

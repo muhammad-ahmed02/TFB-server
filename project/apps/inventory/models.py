@@ -57,42 +57,8 @@ class ProductStockIn(models.Model):
         return self.product.name
 
     def save(self, *args, **kwargs):
-        self.asset = self.purchasing_price * self.available_stock
+        self.asset = self.purchasing_price * (self.available_stock + self.on_credit)
         super(ProductStockIn, self).save(*args, **kwargs)
-
-
-# class Order(models.Model):
-#     unique_code = models.CharField(max_length=10, default=generate_join_code, unique=True, editable=False)
-#     customer_name = models.CharField(max_length=200, null=True, blank=True)
-#     customer_phone = models.CharField(max_length=200, null=True, blank=True)
-#     warranty = models.CharField(max_length=200, null=True, blank=True)
-#     created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, editable=False)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     total_amount = models.DecimalField(decimal_places=2, max_digits=20, null=True, blank=True, editable=False)
-#
-#     def __str__(self):
-#         return str(self.unique_code)
-
-
-# class OrderItems(models.Model):
-#     product = models.ForeignKey(Products, on_delete=models.CASCADE, null=True, blank=True)
-#     order = models.ForeignKey(Order, on_delete=models.CASCADE, null=True, blank=True)
-#     quantity = models.IntegerField(default=1, null=True, blank=True)
-#     selling_price = models.DecimalField(decimal_places=2, max_digits=20)
-#     imei = models.CharField(max_length=200, null=True, blank=True)
-#
-#     def calculate_total_amount(self):
-#         order_items = OrderItems.objects.filter(order__id=self.order.id)
-#         amount = 0
-#         for items in order_items:
-#             amount += items.selling_price * items.quantity
-#         order = Order.objects.get(id=self.order.id)
-#         order.total_amount = amount
-#         order.save()
-#
-#     def save(self, *args, **kwargs):
-#         super(OrderItems, self).save(*args, **kwargs)
-#         self.calculate_total_amount()
 
 
 class SellerProfile(models.Model):
@@ -279,3 +245,71 @@ class Transaction(models.Model):
         company.business_balance += self.business_profit
         company.save()
         super(Transaction, self).save(*args, **kwargs)
+
+
+class Credit(models.Model):
+    payment_choices = (
+        ('PENDING', 'Pending'),
+        ('CLEARED', 'Cleared'),
+    )
+    payment_status = models.CharField(max_length=50, choices=payment_choices, default="PENDING")
+
+    quantity = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.payment_status
+
+
+class CreditItem(models.Model):
+    credit = models.ForeignKey(Credit, on_delete=models.CASCADE)
+    price = models.PositiveIntegerField()
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    imei_or_serial_number = models.ForeignKey(IMEINumber, on_delete=models.CASCADE)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.imei_or_serial_number.number
+
+    def save(self, *args, **kwargs):
+        super(CreditItem, self).save(*args, **kwargs)
+        credit_items = CreditItem.objects.filter(credit=self.credit.id)
+        quantity = len(credit_items)
+        credit = Credit.objects.get(id=self.credit.id)
+        credit.quantity = quantity
+        credit.save()
+
+        product_stock = ProductStockIn.objects.get(imei_or_serial_number=self.imei_or_serial_number.number)
+        if credit.payment_status == "PENDING":
+            product_stock.on_credit += 1
+            product_stock.available_stock -= 1
+            product_stock.save()
+        else:
+            product_stock.on_credit -= 1
+            product_stock.sold += 1
+            product_stock.save()
+
+
+class Claim(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
+    imei_or_serial_number = models.ForeignKey(IMEINumber, on_delete=models.CASCADE)
+    reason = models.CharField(max_length=200)
+
+    product_stock = models.ForeignKey(ProductStockIn, on_delete=models.CASCADE, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.product.name
+
+    def save(self, *args, **kwargs):
+        super(Claim, self).save(*args, **kwargs)
+        product_stock = ProductStockIn.objects.get(imei_or_serial_number=self.imei_or_serial_number.number)
+        self.product_stock = product_stock
+        product_stock.on_claim += 1
+        # product_stock.available_stock -= 1
+        product_stock.save()

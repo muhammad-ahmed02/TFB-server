@@ -94,7 +94,7 @@ class ProductStockInViewSet(ModelViewSet):
                 post_IMEIs.append(new_imei.number)
         product = ProductStockIn.objects.get(id=product_id)
         product.name = request.data['name']
-        product.sold = request.data['number_of_items_sold']
+        product.sold = request.data['sold']
         product.available_stock = request.data['available_stock']
         product.purchasing_price = request.data['purchasing_price']
         product.updated_at = request.data['updated_at']

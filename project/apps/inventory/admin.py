@@ -75,5 +75,5 @@ class TransactionAdmin(admin.ModelAdmin):
 admin.site.register(IMEINumber)
 admin.site.register(Product)
 admin.site.register(Vendor)
-admin.site.register(CashOrderItem)
-admin.site.register(CreditItem)
+# admin.site.register(CashOrderItem)
+# admin.site.register(CreditItem)

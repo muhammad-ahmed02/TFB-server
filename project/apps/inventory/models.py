@@ -182,32 +182,33 @@ class ReturnCashOrder(models.Model):
         return self.cash_order.unique_id
 
     def save(self, *args, **kwargs):
+        seller = SellerProfile.objects.get(id=self.cash_order.sale_by.id)
 
         if self.reason == "NOT_INTERESTED":
-            self.return_amount = self.cash_order.product_stock.purchasing_price * self.cash_order.quantity
+            cash_order_items = CashOrderItem.objects.filter(cash_order=self.cash_order)
+            return_amount = 0
+            for item in cash_order_items:
+                product_stock = ProductStockIn.objects.get(imei_or_serial_number=item.imei_or_serial_number)
+                return_amount += product_stock.purchasing_price
+            self.return_amount = return_amount
         elif self.reason == "ISSUE":
-            self.return_amount = self.cash_order.sale_price
+            self.return_amount = self.cash_order.total_amount
 
-            seller = SellerProfile.objects.get(id=self.cash_order.sale_by.id)
-            seller_share = Setting.objects.all()[0].seller_share
             # seller share calculated from profit
-            seller_profit = ((self.cash_order.profit * seller_share) / 100)
+            seller_profit = ((self.cash_order.total_profit * seller.seller_share) / 100)
             seller.profit -= seller_profit
             seller.save()
         else:
             # calculate profit
-            sale_price = self.cash_order.sale_price
+            sale_price = self.cash_order.total_amount
             profit = sale_price - self.return_amount
 
-            seller = SellerProfile.objects.get(id=self.cash_order.sale_by.id)
-            seller_share = Setting.objects.all()[0].seller_share
-
             # profit added
-            seller_profit = ((profit * seller_share) / 100)
+            seller_profit = ((profit * seller.seller_share) / 100)
             seller.profit += seller_profit
 
             # previous profit deducted
-            seller_prev_profit = ((self.cash_order.profit * seller_share) / 100)
+            seller_prev_profit = ((self.cash_order.total_profit * seller.seller_share) / 100)
             seller.profit -= seller_prev_profit
 
             seller.save()
@@ -276,13 +277,13 @@ class CreditItem(models.Model):
 
     def save(self, *args, **kwargs):
         super(CreditItem, self).save(*args, **kwargs)
-        credit_items = CreditItem.objects.filter(credit=self.credit.id)
+        credit_items = CreditItem.objects.filter(credit=self.credit)
         quantity = len(credit_items)
-        credit = Credit.objects.get(id=self.credit.id)
+        credit = Credit.objects.get(id=self.credit)
         credit.quantity = quantity
         credit.save()
 
-        product_stock = ProductStockIn.objects.get(imei_or_serial_number=self.imei_or_serial_number.number)
+        product_stock = ProductStockIn.objects.get(imei_or_serial_number=self.imei_or_serial_number)
         if credit.payment_status == "PENDING":
             product_stock.on_credit += 1
             product_stock.available_stock -= 1

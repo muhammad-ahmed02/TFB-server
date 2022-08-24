@@ -3,6 +3,7 @@ import random
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+import math
 
 
 def generate_join_code(size=6, chars=string.ascii_uppercase + string.digits):
@@ -57,7 +58,7 @@ class ProductStockIn(models.Model):
         return self.product.name
 
     def save(self, *args, **kwargs):
-        self.asset = self.purchasing_price * (self.available_stock + self.on_credit)
+        self.asset = int(self.purchasing_price * (int(self.available_stock) + self.on_credit))
         super(ProductStockIn, self).save(*args, **kwargs)
 
 
@@ -277,7 +278,7 @@ class CreditItem(models.Model):
 
     def save(self, *args, **kwargs):
         super(CreditItem, self).save(*args, **kwargs)
-        credit_items = CreditItem.objects.filter(credit=self.credit)
+        credit_items = CreditItem.objects.filter(credit=self.credit.id)
         quantity = len(credit_items)
         credit = Credit.objects.get(id=self.credit)
         credit.quantity = quantity

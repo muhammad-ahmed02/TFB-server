@@ -280,11 +280,11 @@ class CreditItem(models.Model):
         super(CreditItem, self).save(*args, **kwargs)
         credit_items = CreditItem.objects.filter(credit=self.credit.id)
         quantity = len(credit_items)
-        credit = Credit.objects.get(id=self.credit)
+        credit = Credit.objects.get(id=self.credit.id)
         credit.quantity = quantity
         credit.save()
 
-        product_stock = ProductStockIn.objects.get(imei_or_serial_number=self.imei_or_serial_number)
+        product_stock = ProductStockIn.objects.get(imei_or_serial_number=self.imei_or_serial_number.number)
         if credit.payment_status == "PENDING":
             product_stock.on_credit += 1
             product_stock.available_stock -= 1

@@ -156,7 +156,7 @@ class CashOrderViewSet(ModelViewSet):
             CashOrderItem.objects.create(cash_order=cash_order,
                                          price=item['price'],
                                          imei_or_serial_number=imei_number,
-                                         product=Product.objects.get(id=item['product']))
+                                         product_stock=ProductStockIn.objects.get(id=item['product_stock']))
 
         return Response(self.serializer_class(cash_order, many=False).data)
 

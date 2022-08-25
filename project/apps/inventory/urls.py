@@ -22,4 +22,5 @@ urlpatterns = [
     path('export/cashorder/', ExportCashOrderViews.as_view()),
     path('export/return-cashorder/', ExportReturnCashOrderViews.as_view()),
     path('export/cashorder/invoice/<str:unique_id>', GenerateOrderInvoice.as_view()),
+    path('available-imei/', AvailableImeiViews.as_view()),
 ] + router.urls

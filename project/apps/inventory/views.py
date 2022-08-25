@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import filters, status
+from rest_framework.views import APIView
 from django.http import FileResponse, HttpResponse
 from django.db import transaction
 from django.views import View
@@ -107,6 +108,12 @@ class SellerProfileViewSet(ModelViewSet):
     serializer_class = SellerProfileSerializer
     queryset = SellerProfile.objects.all().order_by('-updated_at')
     permission_classes = [IsAuthenticated]
+
+    # def update(self, request, *args, **kwargs):
+    """
+    need to confirm the logic
+    should it work with every order ever created or just add/remove the percentage from existing balance
+    """
 
 
 class SettingViewSet(ModelViewSet):
@@ -364,3 +371,24 @@ class ClaimViewSet(ModelViewSet):
     serializer_class = ClaimSerializer
     queryset = Claim.objects.all()
     permission_classes = [IsAuthenticated]
+
+
+class AvailableImeiViews(APIView):
+    pagination_class = None
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        data = {
+            'available_imeis': []
+        }
+        try:
+            product_id = request.query_params['product']
+            product = Product.objects.get(id=product_id)
+            product_stocks = ProductStockIn.objects.filter(available_stock__gt=0, product=product.id)
+            for product_stock in product_stocks:
+                for imei in product_stock.imei_or_serial_number.all():
+                    data['available_imeis'].append(imei.number)
+            return Response(data=data, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(e)
+            return Response(data={"Error, {}".format(e)}, status=status.HTTP_400_BAD_REQUEST)

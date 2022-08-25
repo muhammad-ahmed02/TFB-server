@@ -41,7 +41,7 @@ class ProductStockInViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     filter_backends = [filters.SearchFilter]
-    search_fields = ['product__name', 'vendor__name', 'imei_or_serial_number__number']
+    search_fields = ['product__name', 'vendor__name', 'imei_or_serial_number__number', 'id']
 
     def get_queryset(self):
         if 'available' in self.request.query_params:
@@ -358,3 +358,9 @@ class CompanyProfileViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     pagination_class = None
     http_method_names = ['get', 'put', 'patch']
+
+
+class ClaimViewSet(ModelViewSet):
+    serializer_class = ClaimSerializer
+    queryset = Claim.objects.all()
+    permission_classes = [IsAuthenticated]

@@ -16,6 +16,7 @@ router.register(r"seller-profile", SellerProfileViewSet, basename="Sellers")
 router.register(r"imei-numbers", IMEIViewSet, basename="IMEIs")
 router.register(r"company-profile", CompanyProfileViewSet, basename="Company profile")
 router.register(r"credit", CreditViewSet, basename="Credit")
+router.register(r"claim", ClaimViewSet, basename="Claim")
 
 urlpatterns = [
     path('export/cashorder/', ExportCashOrderViews.as_view()),

@@ -121,13 +121,13 @@ class CashOrderItem(models.Model):
     cash_order = models.ForeignKey(CashOrder, on_delete=models.CASCADE, null=True, blank=True)
     price = models.PositiveIntegerField()
     imei_or_serial_number = models.ForeignKey(IMEINumber, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, blank=True, null=True)
+    product_stock = models.ForeignKey(ProductStockIn, on_delete=models.CASCADE, blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
 
     def __str__(self):
-        return self.product.name
+        return self.product_stock.product.name
 
     def calculate_total_values(self):
         order_items = CashOrderItem.objects.filter(cash_order=self.cash_order.id)

@@ -378,17 +378,18 @@ class ClaimViewSet(ModelViewSet):
         product_stock = request.data['product_stock']
         imei_or_serial_number = request.data['imei_or_serial_number']
         reason = request.data['reason']
-        claim = Credit.objects.get(id=kwargs['pk'])
+        claim = Claim.objects.get(id=kwargs['pk'])
         claim.status = status
-        claim.product_stock = ProductStockIn.objects.get(id=product_stock).id
+        claim.product_stock = ProductStockIn.objects.get(id=product_stock)
         claim.reason = reason
-        claim.imei_or_serial_number = imei_or_serial_number
+        claim.imei_or_serial_number = IMEINumber.objects.get(number=imei_or_serial_number)
         claim.save()
 
         if status == "CLEARED":
             product_stock = ProductStockIn.objects.get(imei_or_serial_number=claim.imei_or_serial_number)
             product_stock.available_stock += 1
             product_stock.save()
+        return Response(self.serializer_class(claim, many=False).data)
 
 
 class AvailableImeiViews(APIView):

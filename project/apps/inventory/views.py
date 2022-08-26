@@ -375,8 +375,14 @@ class ClaimViewSet(ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         status = request.data['status']
+        product_stock = request.data['product_stock']
+        imei_or_serial_number = request.data['imei_or_serial_number']
+        reason = request.data['reason']
         claim = Credit.objects.get(id=kwargs['pk'])
         claim.status = status
+        claim.product_stock = ProductStockIn.objects.get(id=product_stock).id
+        claim.reason = reason
+        claim.imei_or_serial_number = imei_or_serial_number
         claim.save()
 
         if status == "CLEARED":

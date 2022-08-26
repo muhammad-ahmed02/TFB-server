@@ -174,13 +174,13 @@ class CreditViewSet(ModelViewSet):
         credit = Credit.objects.create(payment_status=request.data['payment_status'])
         for item in items:
             imei_number = IMEINumber.objects.get(number=item['imei_or_serial_number'])
-            product = item['product']
+            product_stock = item['product_stock']
             price = item['price']
 
             CreditItem.objects.create(credit=credit,
                                       price=price,
                                       imei_or_serial_number=imei_number,
-                                      product=Product.objects.get(id=product))
+                                      product_stock=ProductStockIn.objects.get(id=product_stock))
 
         return Response(self.serializer_class(credit, many=False).data)
 

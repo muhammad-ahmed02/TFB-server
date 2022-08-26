@@ -52,14 +52,15 @@ class SettingSerializer(ModelSerializer):
 
 
 class CashOrderItemSerializer(ModelSerializer):
-    # product_name = serializers.SerializerMethodField(read_only=True)
+    product_name = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = CashOrderItem
         fields = '__all__'
 
-    # def get_product_name(self, obj):
-    #     return obj.product.name
+    def get_product_name(self, obj):
+        print(obj.product_stock)
+        return obj.product_stock.product.name
 
 
 class CashOrderSerializer(ModelSerializer):
@@ -84,11 +85,11 @@ class CreditItemSerializer(ModelSerializer):
     product_name = serializers.SerializerMethodField(read_only=True)
 
     def get_product_name(self, obj):
-        return obj.product.name
+        return obj.product_stock.product.name
 
     class Meta:
         model = CreditItem
-        fields = ['id', 'price', 'product_name', 'imei_or_serial_number', 'product']
+        fields = ['id', 'price', 'product_name', 'imei_or_serial_number', 'product_stock']
 
 
 class CreditSerializer(ModelSerializer):
@@ -107,10 +108,10 @@ class ClaimSerializer(ModelSerializer):
     vendor_name = serializers.SerializerMethodField(read_only=True)
 
     def get_product_name(self, obj):
-        return obj.product.name
+        return obj.product_stock.product.name
 
     def get_vendor_name(self, obj):
-        return obj.vendor.name
+        return obj.product_stock.vendor.name
 
     class Meta:
         model = Claim

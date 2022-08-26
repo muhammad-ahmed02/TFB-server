@@ -38,7 +38,7 @@ class CreditAdmin(admin.ModelAdmin):
 
 @admin.register(Claim)
 class ClaimAdmin(admin.ModelAdmin):
-    list_display = ['product', 'vendor', 'imei_or_serial_number', 'reason']
+    list_display = ['product_stock', 'imei_or_serial_number', 'reason']
 
 
 @admin.register(Setting)

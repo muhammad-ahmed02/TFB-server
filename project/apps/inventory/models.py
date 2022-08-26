@@ -274,7 +274,7 @@ class Credit(models.Model):
 class CreditItem(models.Model):
     credit = models.ForeignKey(Credit, on_delete=models.CASCADE)
     price = models.PositiveIntegerField()
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product_stock = models.ForeignKey(ProductStockIn, on_delete=models.CASCADE)
     imei_or_serial_number = models.ForeignKey(IMEINumber, on_delete=models.CASCADE)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -308,22 +308,19 @@ class Claim(models.Model):
         ('CLEARED', 'Cleared'),
     )
     status = models.CharField(max_length=20, choices=status_choices, default="PENDING")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
+    product_stock = models.ForeignKey(ProductStockIn, on_delete=models.CASCADE)
     imei_or_serial_number = models.ForeignKey(IMEINumber, on_delete=models.CASCADE)
     reason = models.CharField(max_length=200)
 
-    product_stock = models.ForeignKey(ProductStockIn, on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.product.name
+        return self.product_stock.product.name
 
     def save(self, *args, **kwargs):
         super(Claim, self).save(*args, **kwargs)
         product_stock = ProductStockIn.objects.get(imei_or_serial_number=self.imei_or_serial_number.number)
-        self.product_stock = product_stock
         product_stock.on_claim += 1
         product_stock.available_stock -= 1
         product_stock.save()

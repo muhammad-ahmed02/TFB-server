@@ -122,7 +122,6 @@ class SettingViewSet(ModelViewSet):
     serializer_class = SettingSerializer
     queryset = Setting.objects.all()
     permission_classes = [IsAuthenticated]
-    pagination_class = None
     http_method_names = ['get', 'put', 'patch']
 
 
@@ -467,6 +466,10 @@ class WeekClosureViews(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        return Response(data=WeekClosureSerializer(WeekClosure.objects.all(), many=True).data,
+                        status=status.HTTP_200_OK)
+
+    def post(self, request):
         sellers = SellerProfile.objects.all()
         total_profit = 0
 
@@ -481,4 +484,4 @@ class WeekClosureViews(APIView):
                                    business_profit=company.business_balance)
         company.business_balance = 0
         company.save()
-        return Response(data="Data has been reset", status=status.HTTP_200_OK)
+        return Response(data="Data has been reset", status=status.HTTP_205_RESET_CONTENT)

@@ -137,3 +137,9 @@ class CompanyProfileSerializer(ModelSerializer):
     class Meta:
         model = CompanyProfile
         fields = "__all__"
+
+
+class WeekClosureSerializer(ModelSerializer):
+    class Meta:
+        model = WeekClosure
+        fields = "__all__"

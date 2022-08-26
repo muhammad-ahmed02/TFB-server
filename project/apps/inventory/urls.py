@@ -23,5 +23,6 @@ urlpatterns = [
     path('export/return-cashorder/', ExportReturnCashOrderViews.as_view()),
     path('export/cashorder/invoice/<str:unique_id>', GenerateOrderInvoice.as_view()),
     path('available-imei/', AvailableImeiViews.as_view()),
-    path("export/week-closure/", WeekClosureViews.as_view()),
+    path("export/week-closure/", ExportWeekClosureView.as_view()),
+    path("week-closure/", WeekClosureViews.as_view()),
 ] + router.urls

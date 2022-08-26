@@ -374,6 +374,17 @@ class ClaimViewSet(ModelViewSet):
     queryset = Claim.objects.all()
     permission_classes = [IsAuthenticated]
 
+    def update(self, request, *args, **kwargs):
+        status = request.data['status']
+        claim = Credit.objects.get(id=kwargs['pk'])
+        claim.status = status
+        claim.save()
+
+        if status == "CLEARED":
+            product_stock = ProductStockIn.objects.get(imei_or_serial_number=claim.imei_or_serial_number)
+            product_stock.available_stock += 1
+            product_stock.save()
+
 
 class AvailableImeiViews(APIView):
     permission_classes = [IsAuthenticated]

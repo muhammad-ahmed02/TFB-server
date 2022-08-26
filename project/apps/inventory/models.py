@@ -303,6 +303,11 @@ class CreditItem(models.Model):
 
 
 class Claim(models.Model):
+    status_choices = (
+        ('PENDING', 'Pending'),
+        ('CLEARED', 'Cleared'),
+    )
+    status = models.CharField(max_length=20, choices=status_choices, default="PENDING")
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
     imei_or_serial_number = models.ForeignKey(IMEINumber, on_delete=models.CASCADE)

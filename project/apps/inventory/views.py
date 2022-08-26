@@ -1,3 +1,5 @@
+import datetime
+
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.generics import ListAPIView
 from rest_framework.decorators import action
@@ -374,7 +376,6 @@ class ClaimViewSet(ModelViewSet):
 
 
 class AvailableImeiViews(APIView):
-    pagination_class = None
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -392,3 +393,81 @@ class AvailableImeiViews(APIView):
         except Exception as e:
             print(e)
             return Response(data={"Error, {}".format(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ExportWeekClosureView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        sellers = SellerProfile.objects.all()
+        company = CompanyProfile.objects.get()
+
+        content = io.BytesIO()
+        row = "{username}, {profit}, {seller_share}, {business_share}, {updated_at}, {created_at}\n"
+        content.write(
+            row.format(
+                username="Name",
+                profit="Profit",
+                seller_share="Seller share",
+                business_share="Business Share",
+                updated_at="Updated Date",
+                created_at="Joining Date",
+            ).encode("utf-8")
+        )
+
+        total_profit = 0
+
+        for seller in sellers:
+            total_profit += seller.profit
+
+            content.write(
+                row.format(
+                    username=seller.username,
+                    profit=seller.profit,
+                    seller_share=seller.seller_share,
+                    business_share=seller.business_share,
+                    updated_at=seller.updated_at.strftime("%d-%m-%Y %H:%M:%S"),
+                    created_at=seller.created_at.strftime("%d-%m-%Y %H:%M:%S"),
+                ).encode("utf-8")
+            )
+
+        total_row = "\n{total_profit}, {business_profit}"
+        content.write(
+            total_row.format(
+                total_profit="Total Profit",
+                business_profit="Business Profit",
+            ).encode("utf-8")
+        )
+        content.write(
+            total_row.format(
+                total_profit=f"PKR {total_profit}",
+                business_profit=f"PKR {company.business_balance}",
+            ).encode("utf-8")
+        )
+
+        content.seek(0)
+
+        return FileResponse(
+            content, as_attachment=True, filename=f'Week Closure {datetime.date.today()}.csv'
+        )
+
+
+class WeekClosureViews(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        sellers = SellerProfile.objects.all()
+        total_profit = 0
+
+        for seller in sellers:
+            total_profit += seller.profit
+            seller.profit = 0
+            seller.save()
+
+        company = CompanyProfile.objects.get()
+
+        WeekClosure.objects.create(total_profit=total_profit,
+                                   business_profit=company.business_balance)
+        company.business_balance = 0
+        company.save()
+        return Response(data="Data has been reset", status=status.HTTP_200_OK)

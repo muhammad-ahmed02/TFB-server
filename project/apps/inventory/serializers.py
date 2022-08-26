@@ -52,14 +52,14 @@ class SettingSerializer(ModelSerializer):
 
 
 class CashOrderItemSerializer(ModelSerializer):
-    product_name = serializers.SerializerMethodField(read_only=True)
+    # product_name = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = CashOrderItem
         fields = '__all__'
 
-    def get_product_name(self, obj):
-        return obj.product.name
+    # def get_product_name(self, obj):
+    #     return obj.product.name
 
 
 class CashOrderSerializer(ModelSerializer):

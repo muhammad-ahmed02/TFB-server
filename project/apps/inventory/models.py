@@ -58,7 +58,7 @@ class ProductStockIn(models.Model):
         return self.product.name
 
     def save(self, *args, **kwargs):
-        self.asset = int(self.purchasing_price * (int(self.available_stock) + self.on_credit))
+        self.asset = self.purchasing_price * self.available_stock
         super(ProductStockIn, self).save(*args, **kwargs)
 
 
@@ -174,8 +174,9 @@ class ReturnCashOrder(models.Model):
     )
     cash_order = models.ForeignKey(CashOrder, on_delete=models.CASCADE)
     reason = models.CharField(max_length=20, choices=return_reasons)
-    return_amount = models.IntegerField(null=True, blank=True, help_text="To be filled automatically")
+    reason_description = models.CharField(max_length=200, null=True, blank=True)
 
+    return_amount = models.IntegerField(null=True, blank=True, help_text="To be filled automatically")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -198,7 +199,6 @@ class ReturnCashOrder(models.Model):
             # seller share calculated from profit
             seller_profit = ((self.cash_order.total_profit * seller.seller_share) / 100)
             seller.profit -= seller_profit
-            seller.save()
         else:
             # calculate profit
             sale_price = self.cash_order.total_amount
@@ -212,7 +212,14 @@ class ReturnCashOrder(models.Model):
             seller_prev_profit = ((self.cash_order.total_profit * seller.seller_share) / 100)
             seller.profit -= seller_prev_profit
 
-            seller.save()
+        seller.save()
+
+        cash_order_items = CashOrderItem.objects.filter(cash_order=self.cash_order.id)
+
+        for items in cash_order_items:
+            product_stock = ProductStockIn.objects.get(id=items.product_stock.id)
+            product_stock.available_stock += 1
+            product_stock.save()
 
         super(ReturnCashOrder, self).save(*args, **kwargs)
 
@@ -313,5 +320,16 @@ class Claim(models.Model):
         product_stock = ProductStockIn.objects.get(imei_or_serial_number=self.imei_or_serial_number.number)
         self.product_stock = product_stock
         product_stock.on_claim += 1
-        # product_stock.available_stock -= 1
+        product_stock.available_stock -= 1
         product_stock.save()
+
+
+class WeekClosure(models.Model):
+    total_profit = models.IntegerField()
+    business_profit = models.IntegerField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return str(self.created_at.strftime("%d-%m-%Y %H:%M:%S"))

@@ -112,10 +112,22 @@ class SellerProfileViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     # def update(self, request, *args, **kwargs):
-    """
-    need to confirm the logic
-    should it work with every order ever created or just add/remove the percentage from existing balance
-    """
+    #     seller = SellerProfile.objects.get(id=request.data['id'])
+    #     transactions = Transaction.objects.filter(seller=seller)
+    #     for transaction in transactions:
+    #         cash_order_items = CashOrderItem.objects.filter(cash_order=transaction.order.id)
+    #         for cash_order_item in cash_order_items:
+    #             product_stock = ProductStockIn.objects.get(cash_order_item.product_stock.id)
+    #             cost_price = product_stock.purchasing_price
+    #             sale_price = cash_order_item.price
+    #             total_profit = sale_price - cost_price
+    #             seller_profit = (total_profit * request.data['seller_share']) / 100
+    #             print(seller_profit)
+    #     print(transactions)
+    #     """
+    #     need to confirm the logic
+    #     should it work with every order ever created or just add/remove the percentage from existing balance
+    #     """
 
 
 class SettingViewSet(ModelViewSet):

@@ -415,6 +415,7 @@ class ClaimViewSet(ModelViewSet):
         if status == "CLEARED":
             product_stock = ProductStockIn.objects.get(imei_or_serial_number=claim.imei_or_serial_number)
             product_stock.available_stock += 1
+            product_stock.on_claim -= 1
             product_stock.save()
         return Response(self.serializer_class(claim, many=False).data)
 

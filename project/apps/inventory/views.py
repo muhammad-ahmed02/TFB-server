@@ -111,23 +111,38 @@ class SellerProfileViewSet(ModelViewSet):
     queryset = SellerProfile.objects.all().order_by('-updated_at')
     permission_classes = [IsAuthenticated]
 
-    # def update(self, request, *args, **kwargs):
-    #     seller = SellerProfile.objects.get(id=request.data['id'])
-    #     transactions = Transaction.objects.filter(seller=seller)
-    #     for transaction in transactions:
-    #         cash_order_items = CashOrderItem.objects.filter(cash_order=transaction.order.id)
-    #         for cash_order_item in cash_order_items:
-    #             product_stock = ProductStockIn.objects.get(cash_order_item.product_stock.id)
-    #             cost_price = product_stock.purchasing_price
-    #             sale_price = cash_order_item.price
-    #             total_profit = sale_price - cost_price
-    #             seller_profit = (total_profit * request.data['seller_share']) / 100
-    #             print(seller_profit)
-    #     print(transactions)
-    #     """
-    #     need to confirm the logic
-    #     should it work with every order ever created or just add/remove the percentage from existing balance
-    #     """
+    def update(self, request, *args, **kwargs):
+        seller = SellerProfile.objects.get(id=request.data['id'])
+        prev_business_share = seller.business_share
+        new_business_share = request.data['business_share']
+        company = CompanyProfile.objects.get()
+        seller.profit = 0
+        seller.seller_share = request.data['seller_share']
+        seller.business_share = new_business_share
+
+        try:
+            transactions = Transaction.objects.filter(seller=seller)
+            for transaction in transactions:
+                cash_order_items = CashOrderItem.objects.filter(cash_order=transaction.order.id)
+                for cash_order_item in cash_order_items:
+                    product_stock = ProductStockIn.objects.get(id=cash_order_item.product_stock.id)
+                    cost_price = product_stock.purchasing_price
+                    sale_price = cash_order_item.price
+                    total_profit = sale_price - cost_price
+                    seller_profit = (total_profit * request.data['seller_share']) / 100
+                    seller.profit += seller_profit
+                    # deducting business profit for previous business share
+                    prev_business_profit = (total_profit * prev_business_share) / 100
+                    company.business_balance -= prev_business_profit
+                    # adding business profit for new business share
+                    new_business_profit = (total_profit * new_business_share) / 100
+                    company.business_balance += new_business_profit
+            company.save()
+            seller.save()
+            return Response(self.serializer_class(seller, many=False).data, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(e)
+            return Response(data="Error found, {}".format(e), status=status.HTTP_400_BAD_REQUEST)
 
 
 class SettingViewSet(ModelViewSet):

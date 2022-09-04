@@ -321,8 +321,12 @@ class Claim(models.Model):
     def save(self, *args, **kwargs):
         super(Claim, self).save(*args, **kwargs)
         product_stock = ProductStockIn.objects.get(imei_or_serial_number=self.imei_or_serial_number.number)
-        product_stock.on_claim += 1
-        product_stock.available_stock -= 1
+        if self.status == "PENDING":
+            product_stock.on_claim += 1
+            product_stock.available_stock -= 1
+        else:
+            product_stock.on_claim -= 1
+            product_stock.available_stock += 1
         product_stock.save()
 
 

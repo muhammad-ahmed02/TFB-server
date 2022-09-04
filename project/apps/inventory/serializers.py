@@ -59,7 +59,6 @@ class CashOrderItemSerializer(ModelSerializer):
         fields = '__all__'
 
     def get_product_name(self, obj):
-        print(obj.product_stock)
         return obj.product_stock.product.name
 
 

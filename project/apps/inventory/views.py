@@ -60,7 +60,6 @@ class ProductStockInViewSet(ModelViewSet):
                 product = ProductStockIn.objects.get(pk=entry['id'])
                 products.append(product)
                 product.purchasing_price = entry['purchasing_price']
-                product.available_stock = entry['available_stock']
                 product.save()
             for schedule in products:
                 schedule.clean()
@@ -188,6 +187,28 @@ class CashOrderViewSet(ModelViewSet):
 
         return Response(self.serializer_class(cash_order, many=False).data)
 
+    def destroy(self, request, *args, **kwargs):
+        cash_order = CashOrder.objects.get(id=kwargs['pk'])
+        cash_order_items = CashOrderItem.objects.filter(cash_order=cash_order.id)
+        transactions = Transaction.objects.filter(order=cash_order.id)
+        for cash_order_item in cash_order_items:
+            product_stock = ProductStockIn.objects.get(id=cash_order_item.product_stock.id)
+            product_stock.available_stock += 1
+            product_stock.save()
+
+        for transaction in transactions:
+            seller = SellerProfile.objects.get(id=transaction.seller.id)
+            company = CompanyProfile.objects.get(id=transaction.company.id)
+            seller.profit -= transaction.seller_profit
+            seller.save()
+            company.owner_balance -= transaction.owner_profit
+            company.business_balance -= transaction.business_profit
+            company.save()
+            transaction.delete()
+
+        cash_order.delete()
+        return Response(self.serializer_class(cash_order, many=False).data)
+
 
 class CreditViewSet(ModelViewSet):
     serializer_class = CreditSerializer
@@ -229,6 +250,21 @@ class CreditViewSet(ModelViewSet):
                 product_stock.sold += 1
                 product_stock.save()
 
+        return Response(self.serializer_class(credit, many=False).data)
+
+    def destroy(self, request, *args, **kwargs):
+        credit = Credit.objects.get(id=kwargs['pk'])
+        credit_items = CreditItem.objects.filter(credit=credit.id)
+        for credit_item in credit_items:
+            product_stock = ProductStockIn.objects.get(id=credit_item.product_stock.id)
+            product_stock.available_stock += 1
+            if credit.payment_status == "PENDING":
+                product_stock.on_credit -= 1
+            else:
+                product_stock.sold -= 1
+            product_stock.save()
+
+        credit.delete()
         return Response(self.serializer_class(credit, many=False).data)
 
 
@@ -376,9 +412,10 @@ class ExportReturnCashOrderViews(ListAPIView):
 class GenerateOrderInvoice(View):
     def get(self, request, unique_id):
         cash_order = CashOrder.objects.get(unique_id=unique_id)
+        cash_order_items = CashOrderItem.objects.filter(cash_order=cash_order.id)
 
         html = get_template("inventory/company_invoice.html")
-        context = {'cash_order': cash_order}
+        context = {'cash_order': cash_order, 'cash_order_items': cash_order_items}
         html_content = html.render(context)
         with open("project/templates/inventory/temp.html", "w") as file:
             file.write(html_content)
@@ -417,6 +454,19 @@ class ClaimViewSet(ModelViewSet):
             product_stock.available_stock += 1
             product_stock.on_claim -= 1
             product_stock.save()
+        return Response(self.serializer_class(claim, many=False).data)
+
+    def destroy(self, request, *args, **kwargs):
+        claim = Claim.objects.get(id=kwargs['pk'])
+        product_stock = ProductStockIn.objects.get(id=claim.product_stock.id)
+        if claim.status == "PENDING":
+            product_stock.on_claim -= 1
+            product_stock.available_stock += 1
+        else:
+            product_stock.on_claim += 1
+            product_stock.available_stock -= 1
+        product_stock.save()
+        claim.delete()
         return Response(self.serializer_class(claim, many=False).data)
 
 

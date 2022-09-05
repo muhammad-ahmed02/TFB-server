@@ -1,8 +1,6 @@
-import datetime
-
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.generics import ListAPIView
-from rest_framework.decorators import action
+from rest_framework.decorators import api_view, action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import filters, status
@@ -11,6 +9,7 @@ from django.http import FileResponse, HttpResponse
 from django.db import transaction
 from django.views import View
 from django.template.loader import get_template
+import datetime
 import io
 
 from .serializers import *
@@ -488,6 +487,15 @@ class AvailableImeiViews(APIView):
         except Exception as e:
             print(e)
             return Response(data={"Error, {}".format(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def check_valid_imei(request):
+    imei = request.data['imei_or_serial_number']
+    if CashOrderItem.objects.filter(imei_or_serial_number=imei).exists():
+        return Response(data="False", status=status.HTTP_200_OK)
+    else:
+        return Response(data="True", status=status.HTTP_200_OK)
 
 
 class ExportWeekClosureView(APIView):

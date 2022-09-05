@@ -25,4 +25,5 @@ urlpatterns = [
     path('available-imei/', AvailableImeiViews.as_view()),
     path("export/week-closure/", ExportWeekClosureView.as_view()),
     path("week-closure/", WeekClosureViews.as_view()),
+    path("check-valid-imei/", check_valid_imei),
 ] + router.urls

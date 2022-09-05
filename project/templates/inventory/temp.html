@@ -5,129 +5,31 @@
     <meta charset="utf-8">
     <title>Invoice</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            text-decoration: none;
-        }
-
-        h1 {
-            font: 20px sans-serif;
-            letter-spacing: 4px;
-            text-align: center;
-        }
-
-        table {
-            font-size: 12px;
-            table-layout: fixed;
-            width: 100%;
-        }
-
-        th,
-        td {
-            border-width: 1px;
-            padding: 3px;
-            text-align: left;
-        }
-
-        th,
-        td {
-            border-radius: 3px;
-            border-style: solid;
-        }
-
-        th {
-            background: #EEE;
-            border-color: #BBB;
-        }
-
-        td {
-            border-color: #DDD;
-        }
-
         body {
-            box-sizing: border-box;
-            margin: 0 auto;
-            padding: 50px;
-            background: #FFF;
-            border-radius: 1px;
-            box-shadow: 0 0 10px -2px rgba(0, 0, 0, 0.5);
+            /* background-color: black;
+            color: #ccc; */
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
         }
 
-        header {
-            margin: 0 0 50px;
+        header h1 {
+            text-align: center;
+            font-size: 30px;
         }
 
-        header>h1 {
-            background: #000;
-            border-radius: 4px;
-            color: #FFF;
-            margin: 0 0 16px;
-            padding: 8px 0;
+        .detail {
+            margin-left: 20px;
         }
 
-        /* article */
-
-        .article,
-        .article address,
-        table.meta,
-        table.inventory {
-            margin: 0 0 48px;
-        }
-
-        .article:after {
-            clear: both;
-            content: "";
-            display: table;
-        }
-
-        .article address {
-            float: left;
-            font-size: 125%;
-            font-weight: bold;
-        }
-
-        /* table meta & balance */
-
-        .meta {
-            float: left;
-            margin-bottom: 50px;
-        }
-
-        .meta th {
-            width: 40%;
-        }
-
-        .meta td {
-            width: 60%;
-        }
-
-        /* table items */
-
-        .inventory {
+        .products {
             width: 100%;
         }
 
-        .inventory th {
-            font-weight: bold;
-            text-align: center;
-        }
-
-        /* table balance */
-
-        .balance th,
-        .balance td {
-            width: 50%;
-        }
-
-        .balance td {
+        .right {
             text-align: right;
         }
 
-        /* aside */
-
-        .aside {
-            display: block;
+        .center {
+            text-align: center;
         }
 
         .bold {
@@ -139,34 +41,29 @@
 <body>
     <header>
         <h1>TENSION FREE BAZAR</h1>
-        <h1>CASH INVOICE</h1>
-    </header>
-    <div class="article">
-        <div class="meta">
-            <div class="line">
-                <span class="bold">Invoice #:</span>
-                <span>D4E09A</span>
-            </div>
-            <div class="line">
-                <span class="bold">Date:</span>
-                <span>Sept. 4, 2022, 5:11 p.m.</span>
-            </div>
-            <div class="line">
-                <span class="bold">Customer:</span>
-                <span>Ahmed</span>
-            </div>
-            <div class="line">
-                <span class="bold">Seller:</span>
-                <span>Hassan</span>
-            </div>
+        <div class="address">
+            <span>PIA ROAD NEAR PIZZA ONLINE</span> <br />
+            <span>Johar town, Lahore</span><br />
+            <span>+92 323 1441497, +92 322 7272186, +92 313 4828833</span><br />
         </div>
-        <table class="inventory">
+    </header>
+    <hr />
+    <div class="order-body">
+        <h1>Purchase Order</h1>
+        <div class="details">
+            <span><b>Date:</b>      Sept. 4, 2022, 5:11 p.m.</span> <br />
+            <span><b>Invoice:</b>   D4E09A</span> <br />
+            <span><b>Customer:</b>  Ahmed</span> <br />
+            <span><b>Seller:</b>    Hassan</span> <br />
+        </div>
+        <hr />
+        <table class="products">
             <thead>
                 <tr>
-                    <th><span>S.no</span></th>
-                    <th><span>Product</span></th>
-                    <th><span>IMEI Number</span></th>
-                    <th><span>Price</span></th>
+                    <th><span style="color: skyblue;">S.no</span></th>
+                    <th><span style="color: skyblue;">Product Name</span></th>
+                    <th><span style="color: skyblue;">IMEI Number</span></th>
+                    <th style="text-align: right;"><span style="color: skyblue;">Price</span></th>
                 </tr>
             </thead>
             <tbody>
@@ -189,8 +86,9 @@
                 
             </tbody>
         </table>
+        <hr />
     </div>
-    <div class="aside">
+    <div class="right">
         <div class="meta">
             <div class="line">
                 <span class="bold">Total Amount:</span>
@@ -200,11 +98,12 @@
                 <span class="bold">Warranty:</span>
                 <span>10 days</span>
             </div>
-            <div class="line">
-                <span class="bold">Note:</span>
-                <span>Warranty not applicable for touch, camera, LCD and dead piece.</span>
-            </div>
+
         </div>
+    </div>
+    <div class="center">
+        <span class="bold">Note:</span>
+        <span>Warranty not applicable for touch, camera, LCD and dead piece.</span>
     </div>
 </body>
 

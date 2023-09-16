@@ -1,0 +1,2 @@
+PRODUCTION = False
+DEBUG = True

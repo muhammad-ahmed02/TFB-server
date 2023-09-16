@@ -25,7 +25,9 @@ django-clear-cache
 # Database drivers. Uncomment anyone is used.
 #MySQL-python
 #mysqlclient
-psycopg2
+#psycopg2
+dj-database-url
+psycopg2-binary
 
 # Project custom apps
 django-split-settings

@@ -11,6 +11,7 @@ from django.views import View
 from django.template.loader import get_template
 import datetime
 import io
+import csv
 
 from .serializers import *
 from .utils import html_to_pdf
@@ -208,6 +209,10 @@ class CashOrderViewSet(ModelViewSet):
         cash_order.delete()
         return Response(self.serializer_class(cash_order, many=False).data)
 
+    def update(self, request, *args, **kwargs):
+        data = "Method not allowed"
+        return Response(data, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
 class CreditViewSet(ModelViewSet):
     serializer_class = CreditSerializer
@@ -285,7 +290,8 @@ class ExportCashOrderViews(ListAPIView):
         try:
             start_date = self.request.query_params['start']
             end_date = self.request.query_params['end']
-            return CashOrder.objects.filter(created_at__range=[start_date, end_date])
+            cash_orders = CashOrder.objects.filter(updated_at__range=[start_date, end_date])
+            return cash_orders
         except Exception as e:
             print(e)
             return {}
@@ -293,66 +299,38 @@ class ExportCashOrderViews(ListAPIView):
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
-        content = io.BytesIO()
-        row = "{unique_id}, {product_name}, {sale_price}, {cost_price}, {total_profit}, {sale_by}, {seller_profit}, " \
-              "{owner_profit}, {business_profit}, {warranty}, {date}\n"
-        content.write(
-            row.format(
-                unique_id="Unique ID",
-                product_name="Product Name",
-                sale_price="Sale Price",
-                cost_price="Cost Price",
-                total_profit="Total Profit",
-                sale_by="Sale By",
-                seller_profit="Seller Profit",
-                owner_profit="Owner Profit",
-                business_profit="Business Profit",
-                warranty="Warranty",
-                date="Date"
-            ).encode("utf-8")
-        )
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="report.csv"'
+        writer = csv.writer(response)
 
         total_business = 0
         total_profit = 0
 
         for order in queryset:
-            transaction = Transaction.objects.get(order=order.id)
-            total_business += order.sale_price
-            total_profit += transaction.total_profit
+            # cash order basic header
+            excluded = ["cashorderitem", "returncashorder", "transaction", "created_at"]
+            header = [field.name for field in order._meta.get_fields() if field.name not in excluded]
+            writer.writerow(header)
+            # writing order basic details
+            writer.writerow([getattr(order, field) for field in header])
 
-            content.write(
-                row.format(
-                    unique_id=order.unique_id,
-                    product_name=order.product_stock.product.name,
-                    sale_price=order.sale_price,
-                    cost_price=order.product_stock.purchasing_price,
-                    total_profit=transaction.total_profit,
-                    sale_by=order.sale_by.username,
-                    seller_profit=transaction.seller_profit,
-                    owner_profit=transaction.owner_profit,
-                    business_profit=transaction.business_profit,
-                    warranty=f"{order.warranty} Days",
-                    date=order.created_at.strftime("%d-%m-%Y %H:%M:%S")
-                ).encode("utf-8")
-            )
+            total_profit += order.total_profit
+            total_business += order.total_amount
 
-        total_row = "\n{total_business}, {total_profit}\n"
-        content.write(
-            total_row.format(
-                total_business="Total Business",
-                total_profit="Total Profit",
-            ).encode("utf-8")
-        )
-        content.write(
-            total_row.format(
-                total_business=f"PKR {total_business}",
-                total_profit=f"PKR {total_profit}",
-            ).encode("utf-8")
-        )
-        content.seek(0)
-        return FileResponse(
-            content, as_attachment=True, filename='CashOrderReport.csv'
-        )
+            # cash order item header
+            item_header = ["item_" + field.name for field in CashOrderItem.objects.first()._meta.get_fields() if field.name != "created_at"]
+            writer.writerow(item_header)
+            # writing order items data
+            for order_item in CashOrderItem.objects.filter(cash_order=order):
+                writer.writerow([getattr(order_item, field.replace("item_", "")) for field in item_header])
+            writer.writerow([])
+
+        writer.writerow([])
+        writer.writerow([])
+
+        writer.writerow(["Total Business", "Total Profit"])
+        writer.writerow([total_business, total_profit])
+        return response
 
 
 class ExportReturnCashOrderViews(ListAPIView):
@@ -374,38 +352,37 @@ class ExportReturnCashOrderViews(ListAPIView):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="report.csv"'
+        writer = csv.writer(response)
 
-        content = io.BytesIO()
-        row = "{unique_id}, {product_name}, {sale_price}, {sale_by}, {reason}, {return_amount}, {date} \n"
+        total_returned_amount = 0
 
-        content.write(
-            row.format(
-                unique_id="Cash Order Unique ID",
-                product_name="Product Name",
-                sale_price="Sale Price",
-                sale_by="Sale By",
-                reason="Reason",
-                return_amount="Return Amount",
-                date="Date"
-            ).encode("utf-8")
-        )
-        for order in queryset:
-            content.write(
-                row.format(
-                    unique_id=order.cash_order.unique_id,
-                    product_name=order.cash_order.product.name,
-                    sale_price=order.cash_order.sale_price,
-                    sale_by=order.cash_order.sale_by.username,
-                    reason=order.reason,
-                    return_amount=order.return_amount,
-                    date=order.created_at.strftime("%d-%m-%Y %H:%M:%S")
-                ).encode("utf-8")
-            )
+        for return_order in queryset:
+            excluded = ["cashorderitem", "returncashorder", "transaction", "created_at"]
+            # Return order header
+            return_header = [field.name for field in return_order._meta.get_fields() if field.name not in excluded]
+            cashorder_excluded = ["cashorderitem", "returncashorder", "transaction",
+                                  'id', "unique_id", "created_at", "total_profit"]
+            cash_header = list()
+            cash_order = CashOrder.objects.get(unique_id=return_order.cash_order)
+            for cashorder_field in cash_order._meta.get_fields():
+                if cashorder_field.name not in cashorder_excluded:
+                    cash_header.append("order_" + cashorder_field.name)
+            writer.writerow(return_header + cash_header)
+            total_returned_amount += return_order.return_amount
+            # writing order basic details
+            return_data = [getattr(return_order, field) for field in return_header]
+            cash_data = [getattr(cash_order, field.replace("order_", "")) for field in cash_header]
+            writer.writerow(return_data + cash_data)
+            writer.writerow([])
 
-        content.seek(0)
-        return FileResponse(
-            content, as_attachment=True, filename='ReturnCashOrderReport.csv'
-        )
+        writer.writerow([])
+        writer.writerow([])
+
+        writer.writerow(["Total Amount Returned"])
+        writer.writerow([total_returned_amount])
+        return response
 
 
 class GenerateOrderInvoice(View):

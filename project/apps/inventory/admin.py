@@ -50,6 +50,7 @@ class SettingAdmin(admin.ModelAdmin):
 class CashOrderAdmin(admin.ModelAdmin):
     inlines = [CashOrderItemsInline]
     list_display = ('unique_id', 'customer_name', 'sale_by', 'total_amount', 'total_profit')
+    search_fields = ('id', 'unique_id')
 
 
 @admin.register(SellerProfile)
